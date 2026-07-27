@@ -164,6 +164,7 @@ export function ResultScreen({
           era={era}
           capSpend={capSpend}
           capLimit={capLimit}
+          attemptNumber={attemptNumber}
           size="sm"
         />
         <Button

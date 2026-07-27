@@ -121,6 +121,7 @@ describe('formatShareResult', () => {
       era: '2010s',
       capSpend: 68_400_000,
       capLimit: 65_000_000,
+      attemptNumber: 4,
       host: 'capgod.app',
     })
 
@@ -128,6 +129,7 @@ describe('formatShareResult', () => {
       [
         'CAP GOD 🏆',
         "W 112–108 vs '17 Warriors",
+        'Attempt #4',
         'CAP $68.4M/$65M',
         "PG Stephen Curry '16",
         "SG Dwyane Wade '09",
@@ -147,10 +149,12 @@ describe('formatShareResult', () => {
       era: '2010s',
       capSpend: 68_400_000,
       capLimit: 65_000_000,
+      attemptNumber: 7,
       host: 'capgod.app',
     })
 
     expect(lossText.startsWith('CAP GOD\nL 100–105')).toBe(true)
+    expect(lossText.includes('Attempt #7')).toBe(true)
     expect(lossText.includes('🏆')).toBe(false)
 
     const tieText = formatShareResult({
@@ -166,6 +170,7 @@ describe('formatShareResult', () => {
       era: '2010s',
       capSpend: 68_400_000,
       capLimit: 65_000_000,
+      attemptNumber: 2,
       host: 'capgod.app',
     })
 
@@ -180,6 +185,7 @@ describe('formatShareResult', () => {
       era: '2010s',
       capSpend: 68_400_000,
       capLimit: 65_000_000,
+      attemptNumber: 1,
       host: 'localhost',
     })
 

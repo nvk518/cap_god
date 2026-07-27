@@ -10,6 +10,7 @@ export interface ShareResultInput {
   era: EraId
   capSpend: number
   capLimit: number
+  attemptNumber: number
   host?: string
 }
 
@@ -65,6 +66,8 @@ export function formatShareResult(input: ShareResultInput): string {
   lines.push(
     `${outcome} ${input.result.userScore}–${input.result.championScore} vs ${input.champion.name}`,
   )
+
+  lines.push(`Attempt #${input.attemptNumber}`)
 
   lines.push(formatShareCapLine(input.capSpend, input.capLimit, input.era))
 

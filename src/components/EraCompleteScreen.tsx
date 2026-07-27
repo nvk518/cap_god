@@ -108,6 +108,7 @@ export function ChallengeClearScreen({
           era={era}
           capSpend={capSpend}
           capLimit={capLimit}
+          attemptNumber={clearAttempts}
         />
         <Button
           variant="primary"

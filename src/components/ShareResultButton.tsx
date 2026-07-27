@@ -13,6 +13,7 @@ export interface ShareResultButtonProps {
   era: EraId
   capSpend: number
   capLimit: number
+  attemptNumber: number
   size?: 'sm' | 'md' | 'lg' | undefined
 }
 
@@ -25,6 +26,7 @@ export function ShareResultButton({
   era,
   capSpend,
   capLimit,
+  attemptNumber,
   size,
 }: ShareResultButtonProps) {
   const [feedback, setFeedback] = useState<ShareFeedback>(null)
@@ -69,6 +71,7 @@ export function ShareResultButton({
       era,
       capSpend,
       capLimit,
+      attemptNumber,
     })
 
     try {
