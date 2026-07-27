@@ -4,7 +4,7 @@ import {
   getRemainingChampions,
   loadDefeatedChampions,
 } from '../lib/eraProgress'
-import type { EraId } from '../types/game'
+import type { ChampionTeam, EraId } from '../types/game'
 import styles from './EraChampionSidebar.module.css'
 
 export interface EraChampionSidebarProps {
@@ -17,6 +17,27 @@ function joinClasses(...values: Array<string | false | undefined>): string {
   return values.filter(Boolean).join(' ')
 }
 
+function ChampionRow({
+  champion,
+  variant,
+}: {
+  champion: ChampionTeam
+  variant?: 'current' | 'defeated'
+}) {
+  return (
+    <li
+      className={joinClasses(
+        styles.item,
+        variant === 'current' && styles.itemCurrent,
+        variant === 'defeated' && styles.itemDefeated,
+      )}
+    >
+      <span className={styles.name}>{champion.name}</span>
+      <span className={styles.rating}>{champion.rating}</span>
+    </li>
+  )
+}
+
 export function EraChampionSidebar({
   eraId,
   defeatedIds,
@@ -26,8 +47,9 @@ export function EraChampionSidebar({
   const defeated = getDefeatedChampions(eraId, resolvedDefeatedIds)
   const remaining = getRemainingChampions(eraId, resolvedDefeatedIds)
   const allChampions = getChampionsByEraOrdered(eraId)
-  const nextUp = remaining[0]
-  const preview = remaining.slice(0, compact ? 2 : remaining.length)
+  const current = remaining[0]
+  const upcoming = remaining.slice(1)
+  const upcomingPreview = compact ? upcoming.slice(0, 2) : upcoming
 
   return (
     <aside
@@ -37,37 +59,35 @@ export function EraChampionSidebar({
       <p className={styles.kicker}>Champion Run</p>
       <p className={styles.summary}>
         {defeated.length}/{allChampions.length} defeated
-        {nextUp ? ` · Next: ${nextUp.seasonYear}` : ' · Era complete'}
+        {!current ? ' · Era complete' : ''}
       </p>
 
-      {preview.length > 0 ? (
+      {current ? (
         <section className={styles.section}>
-          <h3 className={styles.sectionTitle}>{compact ? 'Up Next' : 'Remaining'}</h3>
+          <h3 className={styles.sectionTitle}>Current</h3>
           <ul className={styles.list}>
-            {preview.map((champion, index) => (
-              <li
-                key={champion.id}
-                className={joinClasses(styles.item, index === 0 && styles.itemNext)}
-              >
-                <span className={styles.year}>{champion.seasonYear}</span>
-                <span className={styles.name}>{champion.name}</span>
-                <span className={styles.rating}>{champion.rating}</span>
-              </li>
+            <ChampionRow champion={current} variant="current" />
+          </ul>
+        </section>
+      ) : null}
+
+      {upcomingPreview.length > 0 ? (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>Upcoming</h3>
+          <ul className={styles.list}>
+            {upcomingPreview.map((champion) => (
+              <ChampionRow key={champion.id} champion={champion} />
             ))}
           </ul>
         </section>
       ) : null}
 
-      {!compact && defeated.length > 0 ? (
+      {defeated.length > 0 ? (
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>Defeated</h3>
           <ul className={styles.list}>
             {defeated.map((champion) => (
-              <li key={champion.id} className={joinClasses(styles.item, styles.itemDefeated)}>
-                <span className={styles.year}>{champion.seasonYear}</span>
-                <span className={styles.name}>{champion.name}</span>
-                <span className={styles.rating}>{champion.rating}</span>
-              </li>
+              <ChampionRow key={champion.id} champion={champion} variant="defeated" />
             ))}
           </ul>
         </section>

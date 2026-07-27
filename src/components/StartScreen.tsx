@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getEraConfig } from '../data/eras'
+import { getEraProgressStats } from '../lib/eraProgress'
+import { loadSavedRun } from '../lib/savedRun'
 import { Button, IconToggle, RulesDialog, SegmentedControl } from '../ui'
 import type { Difficulty, EraConfig, EraId } from '../types/game'
 import { DRAFT_OFFERS_PER_SLOT } from '../types/game'
@@ -30,6 +32,11 @@ export function StartScreen({
   )
   const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty ?? 'normal')
   const eraConfig = getEraConfig(selectedEra)
+  const eraProgress = useMemo(() => getEraProgressStats(selectedEra), [selectedEra])
+  const savedRun = useMemo(() => loadSavedRun(), [])
+  const canContinue =
+    !eraProgress.complete &&
+    (eraProgress.defeated > 0 || savedRun?.era === selectedEra)
 
   useEffect(() => {
     if (defaultEra) {
@@ -94,7 +101,15 @@ export function StartScreen({
 
         <SegmentedControl
           value={selectedEra}
-          options={eras.map((era) => ({ value: era.id, label: era.label }))}
+          options={eras.map((era) => {
+            const progress = getEraProgressStats(era.id)
+            const progressLabel =
+              progress.defeated > 0 ? ` · ${progress.defeated}/${progress.total}` : ''
+            return {
+              value: era.id,
+              label: `${era.label}${progressLabel}`,
+            }
+          })}
           onValueChange={setSelectedEra}
           ariaLabel="Select era"
         />
@@ -109,13 +124,21 @@ export function StartScreen({
           ariaLabel="Select difficulty"
         />
 
+        {canContinue ? (
+          <p className={styles.resumeHint}>
+            {eraProgress.defeated > 0
+              ? `${eraProgress.defeated}/${eraProgress.total} champions defeated — pick up where you left off.`
+              : 'Resume your run in progress.'}
+          </p>
+        ) : null}
+
         <Button
           variant="primary"
           fullWidth
           size="lg"
           onClick={() => onSelectEra(selectedEra)}
         >
-          Enter the Draft
+          {canContinue ? 'Continue Run' : 'Enter the Draft'}
         </Button>
       </section>
 

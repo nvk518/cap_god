@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { trackEvent } from '../lib/analytics'
 import { getNextChampion } from '../data/champions'
 import { getEraConfig } from '../data/eras'
 import { loadPlayerPool } from '../data/playerRepository'
@@ -19,6 +20,7 @@ import {
   markChampionDefeated,
   resetEraProgress,
 } from '../lib/eraProgress'
+import { loadSavedRun, saveSavedRun } from '../lib/savedRun'
 import {
   canAdvance,
   canFlip,
@@ -52,6 +54,18 @@ import type {
 
 function createInitialSession(): SessionRecord {
   return loadPersistentProgress().session
+}
+
+function getResumableRun() {
+  const saved = loadSavedRun()
+  if (!saved) {
+    return null
+  }
+  const defeatedChampionIds = loadDefeatedChampions(saved.era)
+  if (isEraComplete(saved.era, defeatedChampionIds)) {
+    return null
+  }
+  return saved
 }
 
 function createInitialState(): GameState {
@@ -97,11 +111,14 @@ export interface UseGameStateResult extends GameState {
 }
 
 export function useGameState(): UseGameStateResult {
+  const resumableRun = getResumableRun()
   const [state, setState] = useState<GameState>(createInitialState)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(Boolean(resumableRun))
   const [error, setError] = useState<string | null>(null)
-  const [lastEra, setLastEra] = useState<EraId>('2000s')
-  const [lastDifficulty, setLastDifficulty] = useState<Difficulty>('normal')
+  const [lastEra, setLastEra] = useState<EraId>(resumableRun?.era ?? loadSavedRun()?.era ?? '2000s')
+  const [lastDifficulty, setLastDifficulty] = useState<Difficulty>(
+    resumableRun?.difficulty ?? loadSavedRun()?.difficulty ?? 'normal',
+  )
   const [pool, setPool] = useState<Player[] | null>(null)
   const [persistentProgress, setPersistentProgress] = useState<PersistentProgress>(
     loadPersistentProgress,
@@ -114,6 +131,7 @@ export function useGameState(): UseGameStateResult {
   const seedRef = useRef(0)
   const pendingEraRef = useRef<EraId | null>(null)
   const loadGenerationRef = useRef(0)
+  const resumedRef = useRef(false)
 
   const beginEraLoad = useCallback(
     async (
@@ -164,6 +182,7 @@ export function useGameState(): UseGameStateResult {
         setPool(players)
         setLastEra(era)
         setLastDifficulty(difficulty)
+        saveSavedRun({ era, difficulty })
         setPositionDecisions(createEmptyPositionDecisions())
         decisionsRef.current = createEmptyPositionDecisions()
         setState((current) => ({
@@ -180,6 +199,11 @@ export function useGameState(): UseGameStateResult {
           session: keepSession ? current.session : loadPersistentProgress().session,
         }))
         pendingEraRef.current = null
+        trackEvent('game_start', {
+          era,
+          difficulty,
+          skip_to_draft: skipToDraft,
+        })
       } catch (loadError) {
         if (loadGenerationRef.current !== loadGeneration) {
           return
@@ -187,6 +211,7 @@ export function useGameState(): UseGameStateResult {
 
         const message =
           loadError instanceof Error ? loadError.message : 'Failed to load player data'
+        trackEvent('load_error', { era, message })
         setError(message)
       } finally {
         if (loadGenerationRef.current === loadGeneration) {
@@ -208,11 +233,17 @@ export function useGameState(): UseGameStateResult {
 
   const onSelectDifficulty = useCallback((difficulty: Difficulty) => {
     setLastDifficulty(difficulty)
+    const saved = loadSavedRun()
+    if (saved) {
+      saveSavedRun({ ...saved, difficulty })
+    }
+    trackEvent('difficulty_change', { difficulty })
     setState((current) => ({ ...current, difficulty }))
   }, [])
 
   const onRetryLoad = useCallback(() => {
     const era = pendingEraRef.current ?? lastEra
+    trackEvent('retry_load', { era })
     void beginEraLoad(era, lastDifficulty)
   }, [beginEraLoad, lastDifficulty, lastEra])
 
@@ -228,18 +259,27 @@ export function useGameState(): UseGameStateResult {
 
     setPositionDecisions(createEmptyPositionDecisions())
     decisionsRef.current = createEmptyPositionDecisions()
+    trackEvent('draft_start', {
+      era: state.era,
+      champion_id: state.champion?.id,
+    })
     setState((current) => ({
       ...current,
       screen: 'draft',
       draft,
     }))
-  }, [pool, state.era])
+  }, [pool, state.champion?.id, state.era])
 
   const onSign = useCallback(() => {
     setState((current) => {
       if (!current.draft || !canFlip(current.draft)) {
         return current
       }
+      trackEvent('draft_sign', {
+        era: current.era ?? undefined,
+        slot: current.draft.activeSlot,
+        offer_index: current.draft.offerIndex,
+      })
       return {
         ...current,
         draft: revealSalary(current.draft),
@@ -264,6 +304,13 @@ export function useGameState(): UseGameStateResult {
       }
 
       const offer = draft.currentOffer!
+      trackEvent('draft_lock_player', {
+        era: current.era,
+        slot: draft.activeSlot,
+        offer_index: draft.offerIndex,
+        salary_revealed: draft.salaryRevealed,
+        forced: draft.forcedSign,
+      })
       trackDecision({
         slot: draft.activeSlot,
         offerIndex: draft.offerIndex,
@@ -311,6 +358,16 @@ export function useGameState(): UseGameStateResult {
         hitPenaltySpend: current.draft.hitPenaltySpend,
         rng,
       })
+      const capSpend = getDraftCapSpend(starters, current.era, current.draft.hitPenaltySpend)
+
+      trackEvent('sim_start', {
+        era: current.era,
+        difficulty: current.difficulty,
+        champion_id: current.champion.id,
+        cap_spend: capSpend,
+        cap_limit: eraConfig.cap,
+        hit_penalty_spend: current.draft.hitPenaltySpend,
+      })
 
       return {
         ...current,
@@ -331,6 +388,12 @@ export function useGameState(): UseGameStateResult {
       }
 
       const offer = current.draft.currentOffer
+      trackEvent('draft_hit', {
+        era: current.era,
+        slot: current.draft.activeSlot,
+        offer_index: current.draft.offerIndex,
+        hits_this_slot: current.draft.hitsThisSlot,
+      })
       decisionsRef.current = [
         ...decisionsRef.current,
         {
@@ -393,6 +456,23 @@ export function useGameState(): UseGameStateResult {
       const eraJustCompleted =
         current.simResult.outcome === 'win' && isEraComplete(current.era, defeatedChampionIds)
 
+      trackEvent('game_result', {
+        outcome: current.simResult.outcome,
+        era: current.era,
+        difficulty: current.difficulty,
+        champion_id: current.champion.id,
+        margin: current.simResult.margin,
+        badge_count: badges.length,
+        cap_spend: spend,
+        cap_limit: eraConfig.cap,
+      })
+      if (eraJustCompleted) {
+        trackEvent('era_complete', {
+          era: current.era,
+          difficulty: current.difficulty,
+        })
+      }
+
       return {
         ...current,
         screen: eraJustCompleted ? 'eraComplete' : 'result',
@@ -407,6 +487,7 @@ export function useGameState(): UseGameStateResult {
     if (!state.era) {
       return
     }
+    trackEvent('next_hand', { era: state.era, difficulty: state.difficulty })
     void beginEraLoad(state.era, state.difficulty, { keepSession: true, skipToDraft: true })
   }, [beginEraLoad, state.difficulty, state.era])
 
@@ -414,13 +495,16 @@ export function useGameState(): UseGameStateResult {
     if (!state.era) {
       return
     }
+    trackEvent('run_it_back', { era: state.era, difficulty: state.difficulty })
     resetEraProgress(state.era)
     const progress = resetPersistentSession()
     setPersistentProgress(progress)
+    saveSavedRun({ era: state.era, difficulty: state.difficulty })
     void beginEraLoad(state.era, state.difficulty, { keepSession: false })
   }, [beginEraLoad, state.difficulty, state.era])
 
   const onPlayAgain = useCallback(() => {
+    trackEvent('go_home', { era: state.era ?? undefined })
     rngRef.current = null
     setPool(null)
     setPositionDecisions(createEmptyPositionDecisions())
@@ -436,10 +520,13 @@ export function useGameState(): UseGameStateResult {
   }, [state.era])
 
   const onToggleMute = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      muted: !current.muted,
-    }))
+    setState((current) => {
+      trackEvent('mute_toggle', { muted: !current.muted })
+      return {
+        ...current,
+        muted: !current.muted,
+      }
+    })
   }, [])
 
   const onExportLogsJson = useCallback(() => exportGameLogsJson(loadGameLogs()), [])
@@ -457,6 +544,25 @@ export function useGameState(): UseGameStateResult {
     state.screen === 'result' || state.screen === 'eraComplete'
       ? storedAttempts
       : storedAttempts + (state.champion ? 1 : 0)
+
+  useEffect(() => {
+    if (resumedRef.current) {
+      return
+    }
+    const saved = getResumableRun()
+    if (!saved) {
+      return
+    }
+    resumedRef.current = true
+    void beginEraLoad(saved.era, saved.difficulty, { keepSession: true })
+  }, [beginEraLoad])
+
+  useEffect(() => {
+    if (loading || error) {
+      return
+    }
+    trackEvent('screen_view', { screen: state.screen, era: state.era ?? undefined })
+  }, [error, loading, state.era, state.screen])
 
   return {
     ...state,

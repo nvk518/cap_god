@@ -17,10 +17,6 @@
   flex-wrap: wrap;
 }
 
-.rowSecondary {
-  font-size: 0.6875rem;
-}
-
 .era {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -38,13 +34,6 @@
 
 .session {
   font-family: var(--font-mono);
+  font-size: 0.6875rem;
   color: var(--color-muted);
-}
-
-.next {
-  font-family: var(--font-mono);
-  color: var(--color-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

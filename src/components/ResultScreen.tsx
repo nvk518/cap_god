@@ -8,6 +8,7 @@ import type { Player } from '../schemas/player'
 import { Button } from '../ui/Button'
 import type { BadgeId, ChampionTeam, EraId, SessionRecord, SimResult } from '../types/game'
 import { LINEUP_SLOTS } from '../types/game'
+import { ShareResultButton } from './ShareResultButton'
 import styles from './ResultScreen.module.css'
 
 export interface ResultScreenProps {
@@ -17,6 +18,8 @@ export interface ResultScreenProps {
   era: EraId
   session: SessionRecord
   roster: readonly Player[]
+  capSpend: number
+  capLimit: number
   seed: number
   defeatedIds: readonly string[]
   badgeCounts: Record<BadgeId, number>
@@ -66,6 +69,8 @@ export function ResultScreen({
   era,
   session,
   roster,
+  capSpend,
+  capLimit,
   seed,
   defeatedIds,
   badgeCounts,
@@ -221,6 +226,14 @@ export function ResultScreen({
       <p className={styles.seed}>Seed {seed}</p>
 
       <div className={styles.actions}>
+        <ShareResultButton
+          result={result}
+          champion={champion}
+          roster={roster}
+          era={era}
+          capSpend={capSpend}
+          capLimit={capLimit}
+        />
         <Button variant="primary" fullWidth size="lg" onClick={onNextHand}>
           {result.outcome === 'win' ? 'Next Year' : 'Try Again'}
         </Button>

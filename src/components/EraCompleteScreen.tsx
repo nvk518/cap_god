@@ -1,13 +1,20 @@
 import { getChampionsByEraOrdered } from '../data/champions'
 import { getEraConfig } from '../data/eras'
 import { ALL_BADGE_IDS, badgeLabel } from '../lib/badges'
-import type { BadgeId, EraId, SessionRecord } from '../types/game'
+import type { Player } from '../schemas/player'
+import type { BadgeId, ChampionTeam, EraId, SessionRecord, SimResult } from '../types/game'
 import { Button } from '../ui/Button'
+import { ShareResultButton } from './ShareResultButton'
 import styles from './EraCompleteScreen.module.css'
 
 export interface EraCompleteScreenProps {
   era: EraId
   session: SessionRecord
+  result: SimResult
+  champion: ChampionTeam
+  roster: readonly Player[]
+  capSpend: number
+  capLimit: number
   badgesEarned: readonly BadgeId[]
   badgeCounts: Record<BadgeId, number>
   onRunItBack: () => void
@@ -17,6 +24,11 @@ export interface EraCompleteScreenProps {
 export function EraCompleteScreen({
   era,
   session,
+  result,
+  champion,
+  roster,
+  capSpend,
+  capLimit,
   badgesEarned,
   badgeCounts,
   onRunItBack,
@@ -67,6 +79,14 @@ export function EraCompleteScreen({
       ) : null}
 
       <div className={styles.actions}>
+        <ShareResultButton
+          result={result}
+          champion={champion}
+          roster={roster}
+          era={era}
+          capSpend={capSpend}
+          capLimit={capLimit}
+        />
         <Button variant="primary" fullWidth size="lg" onClick={onRunItBack}>
           Run It Back
         </Button>

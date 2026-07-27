@@ -52,6 +52,20 @@ export function loadAllEraProgress(): EraProgressMap {
   return readStorage()
 }
 
+export function getEraProgressStats(eraId: EraId): {
+  defeated: number
+  total: number
+  complete: boolean
+} {
+  const defeatedIds = loadDefeatedChampions(eraId)
+  const total = getChampionsByEraOrdered(eraId).length
+  return {
+    defeated: defeatedIds.length,
+    total,
+    complete: isEraComplete(eraId, defeatedIds),
+  }
+}
+
 export function getRemainingChampions(eraId: EraId, defeatedIds: readonly string[]) {
   return getChampionsByEraOrdered(eraId).filter(
     (champion) => !defeatedIds.includes(champion.id),

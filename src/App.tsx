@@ -9,7 +9,7 @@ import { SimTicker } from './components/SimTicker'
 import { StartScreen } from './components/StartScreen'
 import { getEraConfig, SELECTABLE_ERAS } from './data/eras'
 import { useGameState } from './hooks/useGameState'
-import { getFinalStarters } from './lib/draft'
+import { getDraftCapSpend, getFinalStarters } from './lib/draft'
 import { Button } from './ui/Button'
 
 function GameplayLayout({
@@ -37,6 +37,11 @@ function GameplayLayout({
 export default function App() {
   const game = useGameState()
   const simRoster = game.draft ? getFinalStarters(game.draft) : []
+  const simCapSpend =
+    game.draft && game.era
+      ? getDraftCapSpend(simRoster, game.era, game.draft.hitPenaltySpend)
+      : 0
+  const simCapLimit = game.era ? getEraConfig(game.era).cap : 0
   const showNav =
     !game.loading &&
     !game.error &&
@@ -148,6 +153,8 @@ export default function App() {
                 era={game.era}
                 session={game.session}
                 roster={simRoster}
+                capSpend={simCapSpend}
+                capLimit={simCapLimit}
                 seed={game.seed}
                 defeatedIds={game.defeatedChampionIds}
                 badgeCounts={game.persistentProgress.badgeCounts}
@@ -157,10 +164,15 @@ export default function App() {
               />
             ) : null}
 
-            {game.screen === 'eraComplete' ? (
+            {game.screen === 'eraComplete' && game.simResult && game.champion ? (
               <EraCompleteScreen
                 era={game.era}
                 session={game.session}
+                result={game.simResult}
+                champion={game.champion}
+                roster={simRoster}
+                capSpend={simCapSpend}
+                capLimit={simCapLimit}
                 badgesEarned={game.badges}
                 badgeCounts={game.persistentProgress.badgeCounts}
                 onRunItBack={game.onRunItBack}
