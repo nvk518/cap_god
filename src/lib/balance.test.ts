@@ -15,7 +15,7 @@ describe('balance simulation', () => {
         expect(entry.informedWinRate).toBeGreaterThanOrEqual(0.2)
         expect(entry.informedWinRate).toBeLessThanOrEqual(0.65)
       } else {
-        expect(entry.informedWinRate).toBeGreaterThanOrEqual(0.05)
+        expect(entry.informedWinRate).toBeGreaterThanOrEqual(0.03)
         expect(entry.informedWinRate).toBeLessThanOrEqual(0.35)
       }
 

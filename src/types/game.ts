@@ -145,7 +145,7 @@ export const TIME_MACHINE_MIN_CAP_POINTS = 3
 
 export const PLAYER_ERA_CAPS: Record<PlayerEra, number> = {
   '2000s': 50_000_000,
-  '2010s': 70_000_000,
+  '2010s': 65_000_000,
   '2020s': 100_000_000,
 }
 
@@ -153,7 +153,11 @@ export const SALARY_CHEAP_THRESHOLD = 0.2
 export const SALARY_BLOAT_THRESHOLD = 0.7
 
 export const SIM_RATING_NOISE = 5
+export const SIM_SCORE_NOISE = 3
+/** Scales all sim score/rating noise — lower means fewer upsets. */
+export const SIM_NOISE_SCALE = 0.5
 export const SIM_MARGIN_FACTOR = 0.35
+export const OT_CHANCE_MULTIPLIER = 1.5
 export const SIM_SCORE_MIN = 85
 export const SIM_SCORE_MAX = 130
 

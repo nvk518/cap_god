@@ -55,7 +55,7 @@ const ERA_CONFIGS: Record<EraId, EraConfig> = {
     id: '2010s',
     label: '2010s',
     cap: PLAYER_ERA_CAPS['2010s'],
-    description: 'The superteam decade. Stretch the floor with a $70M cap.',
+    description: 'The superteam decade. Stretch the floor with a $65M cap.',
     balance: { ...NORMAL_BALANCE, cap: PLAYER_ERA_CAPS['2010s'] },
   },
   '2020s': {

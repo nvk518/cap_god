@@ -7,11 +7,18 @@
   position: relative;
   width: 100%;
   min-height: 16rem;
+}
+
+.cardInner {
+  position: relative;
+  width: 100%;
+  min-height: 16rem;
   transform-style: preserve-3d;
   transition: transform var(--motion-slow);
 }
 
-.hardBlind {
+.hardBlind,
+.hardBlind .cardInner {
   min-height: unset;
   height: auto;
 }
@@ -40,11 +47,16 @@
     var(--color-charcoal) 100%
   );
   box-shadow: var(--shadow-card);
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
+.face {
+  transform: rotateY(0deg) translateZ(1px);
+}
+
 .back {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(1px);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -173,7 +185,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card {
+  .cardInner {
     transition: none;
   }
 
@@ -184,22 +196,23 @@
   .back {
     position: static;
     transform: none;
+    -webkit-backface-visibility: visible;
     backface-visibility: visible;
   }
 
-  .card:not(.revealed) .face {
+  .cardInner:not(.revealed) .face {
     display: flex;
   }
 
-  .card:not(.revealed) .back {
+  .cardInner:not(.revealed) .back {
     display: none;
   }
 
-  .card.revealed .face {
+  .cardInner.revealed .face {
     display: none;
   }
 
-  .card.revealed .back {
+  .cardInner.revealed .back {
     display: flex;
   }
 }

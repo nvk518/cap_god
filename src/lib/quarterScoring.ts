@@ -50,7 +50,7 @@ export function distributeMarginWeights(
     let cumulative = 0
 
     for (let quarterIndex = 0; quarterIndex < 3; quarterIndex += 1) {
-      let swing = randomInt(rng, -6, 6)
+      let swing = randomInt(rng, -3, 3)
       if (swing === 0) {
         swing = rng() < 0.5 ? -2 : 2
       }
@@ -89,7 +89,7 @@ function allocateQuarterPoints(
   profile: ReturnType<typeof getScoringProfile>,
   rng: SeededRandom,
 ): { userPoints: number; championPoints: number } {
-  const paceNoise = randomInt(rng, -4, 4)
+  const paceNoise = randomInt(rng, -2, 2)
   const paceThisQuarter = profile.pointsPerQuarter + paceNoise
   const userTarget = Math.round(remainingUser / quartersLeft)
   const championTarget = Math.round(remainingChampion / quartersLeft)
@@ -100,7 +100,7 @@ function allocateQuarterPoints(
   userPoints = Math.round((userPoints * 9 + userTarget * 11) / 20)
   championPoints = Math.round((championPoints * 9 + championTarget * 11) / 20)
 
-  const swingNoise = randomInt(rng, -2, 2)
+  const swingNoise = randomInt(rng, -1, 1)
   userPoints += swingNoise
   championPoints -= swingNoise
 

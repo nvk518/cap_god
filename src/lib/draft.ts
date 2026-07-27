@@ -34,6 +34,14 @@ export function createSeededRandom(seed: number): SeededRandom {
   }
 }
 
+/** Uniform noise in [-amplitude, amplitude], rounded to the nearest integer. */
+export function randomSignedNoise(rng: SeededRandom, amplitude: number): number {
+  if (amplitude <= 0) {
+    return 0
+  }
+  return Math.round((rng() * 2 - 1) * amplitude)
+}
+
 export function shuffleWithSeed<T>(items: readonly T[], rng: SeededRandom): T[] {
   const result = [...items]
 

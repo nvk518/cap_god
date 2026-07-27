@@ -1,5 +1,5 @@
 import type { SeededRandom } from './draft'
-import { FINISH_GAME_WINNER_CHANCE } from '../types/game'
+import { FINISH_GAME_WINNER_CHANCE, OT_CHANCE_MULTIPLIER } from '../types/game'
 
 export interface SimFinishDrama {
   overtime: boolean
@@ -39,11 +39,11 @@ export function computeStrengthEdge(userRating: number, championCombatRating: nu
   return clamp((userRating - championCombatRating) / 40, -1, 1)
 }
 
-/** Close games and evenly matched teams see more overtime — roughly 2% to 14%. */
+/** Close games and evenly matched teams see more overtime — roughly 3% to 21%. */
 export function computeOvertimeChance(strengthEdge: number, scoreMargin: number): number {
   const closenessBonus = clamp(1 - scoreMargin / 10, 0, 1) * 0.08
   const evenMatchupBonus = (1 - Math.abs(strengthEdge)) * clamp(1 - scoreMargin / 8, 0, 1) * 0.05
-  return 0.02 + closenessBonus + evenMatchupBonus
+  return (0.02 + closenessBonus + evenMatchupBonus) * OT_CHANCE_MULTIPLIER
 }
 
 export function computeGameWinnerChance(): number {
@@ -63,7 +63,7 @@ function resolveOvertimeWinner(
     return 'champion'
   }
 
-  const roll = rng() + strengthEdge * 0.15
+  const roll = rng() + strengthEdge * 0.075
   return roll >= 0.5 ? 'user' : 'champion'
 }
 

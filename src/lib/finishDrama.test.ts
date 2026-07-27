@@ -14,8 +14,8 @@ describe('finishDrama', () => {
     const mismatch = computeOvertimeChance(computeStrengthEdge(450, 360), 2)
     expect(closeEven).toBeGreaterThan(blowout)
     expect(closeEven).toBeGreaterThan(mismatch)
-    expect(closeEven).toBeGreaterThanOrEqual(0.08)
-    expect(blowout).toBeLessThanOrEqual(0.05)
+    expect(closeEven).toBeGreaterThanOrEqual(0.12)
+    expect(blowout).toBeLessThanOrEqual(0.075)
   })
 
   it('uses a flat buzzer-beater chance', () => {
@@ -42,8 +42,8 @@ describe('finishDrama', () => {
       }
     }
 
-    expect(overtimeHits).toBeGreaterThan(20)
-    expect(overtimeHits).toBeLessThan(180)
+    expect(overtimeHits).toBeGreaterThan(30)
+    expect(overtimeHits).toBeLessThan(270)
   })
 
   it('creates buzzer-beaters at roughly a 5% rate in regulation', () => {

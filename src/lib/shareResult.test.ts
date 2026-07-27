@@ -87,7 +87,7 @@ describe('formatShareOutcomeLetter', () => {
 
 describe('formatShareCapLine', () => {
   it('formats regular-era dollars', () => {
-    expect(formatShareCapLine(68_400_000, 70_000_000, '2010s')).toBe('CAP $68.4M/$70M')
+    expect(formatShareCapLine(68_400_000, 65_000_000, '2010s')).toBe('CAP $68.4M/$65M')
   })
 
   it('formats time machine cap points', () => {
@@ -95,7 +95,7 @@ describe('formatShareCapLine', () => {
   })
 
   it('includes paid-hit penalty spend in the cap line', () => {
-    expect(formatShareCapLine(71_500_000, 70_000_000, '2010s')).toBe('CAP $71.5M/$70M')
+    expect(formatShareCapLine(71_500_000, 65_000_000, '2010s')).toBe('CAP $71.5M/$65M')
   })
 })
 
@@ -120,7 +120,7 @@ describe('formatShareResult', () => {
       roster,
       era: '2010s',
       capSpend: 68_400_000,
-      capLimit: 70_000_000,
+      capLimit: 65_000_000,
       host: 'capgod.app',
     })
 
@@ -128,7 +128,7 @@ describe('formatShareResult', () => {
       [
         'CAP GOD 🏆',
         "W 112–108 vs '17 Warriors",
-        'CAP $68.4M/$70M',
+        'CAP $68.4M/$65M',
         "PG Stephen Curry '16",
         "SG Dwyane Wade '09",
         "SF LeBron James '13",
@@ -146,7 +146,7 @@ describe('formatShareResult', () => {
       roster,
       era: '2010s',
       capSpend: 68_400_000,
-      capLimit: 70_000_000,
+      capLimit: 65_000_000,
       host: 'capgod.app',
     })
 
@@ -165,7 +165,7 @@ describe('formatShareResult', () => {
       roster,
       era: '2010s',
       capSpend: 68_400_000,
-      capLimit: 70_000_000,
+      capLimit: 65_000_000,
       host: 'capgod.app',
     })
 
@@ -179,7 +179,7 @@ describe('formatShareResult', () => {
       roster,
       era: '2010s',
       capSpend: 68_400_000,
-      capLimit: 70_000_000,
+      capLimit: 65_000_000,
       host: 'localhost',
     })
 

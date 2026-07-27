@@ -11,17 +11,14 @@ import type {
 import {
   DYNASTY_KILLER_RATING,
   HEARTBREAK_MARGIN,
+  SIM_NOISE_SCALE,
+  SIM_SCORE_NOISE,
 } from '../types/game'
 import { getEraBalance } from '../data/eras'
 import { getGame7ScoreMidpoint, getScoringProfile } from '../data/scoringPace'
 import { applyFinishDrama } from './finishDrama'
-import { computeOverCapPenalty, isOverCap, type SeededRandom } from './draft'
+import { computeOverCapPenalty, isOverCap, randomSignedNoise, type SeededRandom } from './draft'
 import { buildRealisticQuarterScores } from './quarterScoring'
-
-function randomInt(rng: SeededRandom, min: number, max: number): number {
-  const span = max - min + 1
-  return min + Math.floor(rng() * span)
-}
 
 function clampScore(score: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, Math.round(score)))
@@ -176,12 +173,12 @@ export function simulateGame7({
   const rawRating = sumPlayerRatings(roster)
   const overCapPenalty = computeOverCapPenalty(roster, eraId, capLimit, hitPenaltySpend)
   const userRating = rawRating - overCapPenalty
-  const championNoise = randomInt(rng, -balance.championRatingNoise, balance.championRatingNoise)
+  const championNoise = randomSignedNoise(rng, balance.championRatingNoise * SIM_NOISE_SCALE)
   const championEffectiveRating = champion.rating + championNoise
   const championCombatRating = championEffectiveRating * balance.championCombatScale
   const expectedMargin = (userRating - championCombatRating) * balance.marginFactor
-  const userScoreNoise = randomInt(rng, -3, 3)
-  const championScoreNoise = randomInt(rng, -3, 3)
+  const userScoreNoise = randomSignedNoise(rng, SIM_SCORE_NOISE * SIM_NOISE_SCALE)
+  const championScoreNoise = randomSignedNoise(rng, SIM_SCORE_NOISE * SIM_NOISE_SCALE)
   const scoreProfile = getScoringProfile(champion.seasonYear, eraId)
   const midpoint = getGame7ScoreMidpoint(championEffectiveRating, champion.seasonYear, eraId)
   const rawUserScore = clampScore(

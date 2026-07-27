@@ -40,15 +40,10 @@ export function DraftCard({ player, salaryRevealed, era, difficulty, activeSlot 
 
   return (
     <div className={styles.scene}>
-      <div
-        className={joinClasses(
-          styles.card,
-          salaryRevealed && styles.revealed,
-          hardBlind && styles.hardBlind,
-        )}
-      >
-        <div className={styles.face}>
-          <div className={styles.faceHeader}>
+      <div className={joinClasses(styles.card, hardBlind && styles.hardBlind)}>
+        <div className={joinClasses(styles.cardInner, salaryRevealed && styles.revealed)}>
+          <div className={styles.face}>
+            <div className={styles.faceHeader}>
             <span className={styles.year}>
               {player.year}
               {showRating ? ` · ${player.rating}` : ''}
@@ -78,9 +73,9 @@ export function DraftCard({ player, salaryRevealed, era, difficulty, activeSlot 
               </dl>
             </>
           )}
-        </div>
+          </div>
 
-        <div className={styles.back}>
+          <div className={styles.back}>
           <p className={styles.backLabel}>Contract Revealed</p>
           <p className={styles.salary}>{formatSalary(player.salary)}</p>
           {salaryRevealed && difficulty === 'hard' ? (
@@ -89,6 +84,7 @@ export function DraftCard({ player, salaryRevealed, era, difficulty, activeSlot 
           {salaryLabel ? (
             <p className={joinClasses(styles.tag, tagClass(salaryTag))}>{salaryLabel}</p>
           ) : null}
+          </div>
         </div>
       </div>
     </div>
