@@ -83,7 +83,6 @@
 
 .quarterStrip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-xs);
   padding: var(--space-xs) 0;
   border-top: 1px solid var(--color-charcoal-border);
@@ -95,6 +94,24 @@
   flex-direction: column;
   align-items: center;
   gap: 0.125rem;
+  padding: var(--space-xs) 0.125rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) ease,
+    background var(--motion-fast) ease;
+}
+
+.quarterCell:hover {
+  border-color: var(--color-charcoal-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.quarterCellSelected {
+  border-color: var(--color-amber-dim);
+  background: rgba(245, 166, 35, 0.08);
 }
 
 .quarterLabel {
@@ -109,6 +126,41 @@
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--color-off-white);
+}
+
+.periodPlays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-charcoal-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.periodHeadline {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-off-white);
+}
+
+.periodEmphasis {
+  color: var(--color-amber-bright);
+}
+
+.periodHighlightList {
+  margin: 0;
+  padding-left: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.periodHighlightItem {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
 }
 
 .rosterGrid {

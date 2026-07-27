@@ -86,6 +86,8 @@ export interface SimRatingBreakdown {
 
 export interface SimFinishDrama {
   overtime: boolean
+  /** Number of overtime periods played (1–3). */
+  overtimePeriodCount?: number
   gameWinner: boolean
   winnerSide?: 'user' | 'champion'
 }
@@ -95,7 +97,10 @@ export interface SimResult {
   championScore: number
   quarters: QuarterScore[]
   regulationScore?: { user: number; champion: number }
+  /** Total overtime points scored (all periods combined). */
   overtime?: { user: number; champion: number }
+  /** Cumulative scores at the end of each OT period (OT, 2OT, 3OT). */
+  overtimePeriods?: Array<{ user: number; champion: number }>
   finishDrama: SimFinishDrama
   narrativeSeed: number
   userRating: number

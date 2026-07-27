@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ALL_BADGE_IDS, badgeDescription, badgeLabel } from '../lib/badges'
 import { clearGameLogs, exportGameLogsCsv, exportGameLogsJson, loadGameLogs } from '../lib/gameLog'
 import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { Player } from '../schemas/player'
+import {
+  buildResultPeriodOptions,
+  buildSimTimeline,
+  findPeriodEvent,
+  type ResultPeriodKey,
+} from '../lib/simTimeline'
 import { Button } from '../ui/Button'
 import type { BadgeId, ChampionTeam, EraId, SessionRecord, SimResult } from '../types/game'
 import { LINEUP_SLOTS } from '../types/game'
@@ -67,6 +73,14 @@ export function ResultScreen({
 }: ResultScreenProps) {
   const [showStats, setShowStats] = useState(false)
   const [logsCleared, setLogsCleared] = useState(false)
+  const periodOptions = useMemo(() => buildResultPeriodOptions(result), [result])
+  const timeline = useMemo(
+    () => buildSimTimeline(result, roster, champion),
+    [champion, result, roster],
+  )
+  const defaultPeriodKey = periodOptions[periodOptions.length - 1]?.key ?? 'Q4'
+  const [selectedPeriod, setSelectedPeriod] = useState<ResultPeriodKey>(defaultPeriodKey)
+  const selectedEvent = findPeriodEvent(timeline, selectedPeriod)
 
   return (
     <section className={styles.root} aria-label="Result screen">
@@ -89,16 +103,49 @@ export function ResultScreen({
           </div>
         </div>
 
-        {result.quarters.length > 0 ? (
-          <div className={styles.quarterStrip} aria-label="Quarter scores">
-            {result.quarters.map((quarter) => (
-              <span key={quarter.quarter} className={styles.quarterCell}>
-                <span className={styles.quarterLabel}>Q{quarter.quarter}</span>
-                <span className={styles.quarterScore}>
-                  {quarter.user}-{quarter.champion}
-                </span>
-              </span>
-            ))}
+        {periodOptions.length > 0 ? (
+          <div
+            className={styles.quarterStrip}
+            style={{ gridTemplateColumns: `repeat(${periodOptions.length}, 1fr)` }}
+            aria-label="Quarter scores"
+          >
+            {periodOptions.map((period) => {
+              const isSelected = selectedPeriod === period.key
+              return (
+                <button
+                  key={period.key}
+                  type="button"
+                  className={joinClasses(
+                    styles.quarterCell,
+                    isSelected && styles.quarterCellSelected,
+                  )}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedPeriod(period.key)}
+                >
+                  <span className={styles.quarterLabel}>{period.label}</span>
+                  <span className={styles.quarterScore}>
+                    {period.user}-{period.champion}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+
+        {selectedEvent ? (
+          <div className={styles.periodPlays} aria-label="Period summary">
+            <p className={joinClasses(styles.periodHeadline, selectedEvent.emphasis && styles.periodEmphasis)}>
+              {selectedEvent.headline}
+            </p>
+            {selectedEvent.highlights.length > 0 ? (
+              <ul className={styles.periodHighlightList}>
+                {selectedEvent.highlights.map((line) => (
+                  <li key={line} className={styles.periodHighlightItem}>
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         ) : null}
 

@@ -67,4 +67,40 @@ describe('finishDrama', () => {
     expect(buzzerHits).toBeGreaterThan(60)
     expect(buzzerHits).toBeLessThan(160)
   })
+
+  it('can extend to double and triple overtime', () => {
+    let doubleOtHits = 0
+    let tripleOtHits = 0
+
+    for (let seed = 0; seed < 2_000; seed += 1) {
+      const result = applyFinishDrama({
+        userScore: 104,
+        championScore: 101,
+        userRating: 410,
+        championCombatRating: 410,
+        rng: createSeededRandom(seed + 5_000),
+      })
+
+      if (!result.finishDrama.overtime) {
+        continue
+      }
+
+      const periodCount = result.overtimePeriods?.length ?? 1
+      if (periodCount >= 2) {
+        doubleOtHits += 1
+      }
+      if (periodCount >= 3) {
+        tripleOtHits += 1
+      }
+
+      expect(result.overtimePeriods?.length).toBeGreaterThanOrEqual(1)
+      expect(result.finishDrama.overtimePeriodCount).toBe(periodCount)
+      expect(result.userScore).not.toBe(result.championScore)
+    }
+
+    expect(doubleOtHits).toBeGreaterThan(80)
+    expect(doubleOtHits).toBeLessThan(600)
+    expect(tripleOtHits).toBeGreaterThan(20)
+    expect(tripleOtHits).toBeLessThan(300)
+  })
 })

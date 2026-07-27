@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Player } from '../schemas/player'
-import { buildSimTimeline } from '../lib/simTimeline'
+import {
+  buildSimTimeline,
+  overtimePeriodLabel,
+} from '../lib/simTimeline'
 import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { ChampionTeam, SimResult } from '../types/game'
 import { Button } from '../ui/Button'
@@ -18,12 +21,12 @@ function joinClasses(...values: Array<string | false | undefined>): string {
 }
 
 function quarterLabel(
-  quarter: 1 | 2 | 3 | 4 | 'OT',
+  quarter: 1 | 2 | 3 | 4 | 'OT' | '2OT' | '3OT',
   kind: 'tipoff' | 'quarter' | 'overtime',
   isFinalEvent: boolean,
 ): string {
-  if (quarter === 'OT') {
-    return 'OT'
+  if (quarter === 'OT' || quarter === '2OT' || quarter === '3OT') {
+    return quarter
   }
   if (isFinalEvent && kind !== 'tipoff') {
     return 'Final'
@@ -45,6 +48,8 @@ export function SimTicker({ result, champion, roster, onComplete }: SimTickerPro
   const isFinalEvent = activeIndex >= lastIndex && current?.kind !== 'tipoff'
   const atEnd = activeIndex >= lastIndex
   const hasOvertime = result.finishDrama.overtime
+  const otPeriodCount =
+    result.overtimePeriods?.length ?? (hasOvertime ? 1 : 0)
 
   useEffect(() => {
     setActiveIndex(0)
@@ -135,17 +140,29 @@ export function SimTicker({ result, champion, roster, onComplete }: SimTickerPro
             </li>
           )
         })}
-        {hasOvertime ? (
-          <li
-            className={joinClasses(
-              styles.quarterDot,
-              current?.quarter === 'OT' && styles.quarterDotCurrent,
-              activeIndex >= lastIndex && styles.quarterDotActive,
-            )}
-          >
-            OT
-          </li>
-        ) : null}
+        {hasOvertime
+          ? Array.from({ length: otPeriodCount }, (_, index) => {
+              const label = overtimePeriodLabel(index)
+              const otEventIndex = timeline.events.findIndex(
+                (event) => event.kind === 'overtime' && event.quarter === label,
+              )
+              const isComplete = otEventIndex >= 0 && activeIndex >= otEventIndex
+              const isCurrent = current?.quarter === label
+
+              return (
+                <li
+                  key={label}
+                  className={joinClasses(
+                    styles.quarterDot,
+                    isComplete && styles.quarterDotActive,
+                    isCurrent && styles.quarterDotCurrent,
+                  )}
+                >
+                  {label}
+                </li>
+              )
+            })
+          : null}
       </ul>
 
       <div className={styles.scoreboard}>
@@ -163,7 +180,9 @@ export function SimTicker({ result, champion, roster, onComplete }: SimTickerPro
             {current?.kind === 'tipoff'
               ? 'Opening tip'
               : current?.kind === 'overtime'
-                ? 'Overtime'
+                ? current.quarter === 'OT'
+                  ? 'Overtime'
+                  : `${current.quarter}`
                 : current?.quarter === 4 && hasOvertime && activeIndex < lastIndex
                   ? 'End of regulation'
                   : isFinalEvent

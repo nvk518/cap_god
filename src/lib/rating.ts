@@ -239,6 +239,7 @@ export function simulateGame7({
     quarters,
     ...(finish.regulationScore ? { regulationScore: finish.regulationScore } : {}),
     ...(finish.overtime ? { overtime: finish.overtime } : {}),
+    ...(finish.overtimePeriods ? { overtimePeriods: finish.overtimePeriods } : {}),
     finishDrama: finish.finishDrama,
     narrativeSeed,
     userRating,
