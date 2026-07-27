@@ -1,8 +1,20 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearSavedRun, loadSavedRun, saveSavedRun } from './savedRun'
+
+const store = new Map<string, string>()
 
 describe('savedRun', () => {
   beforeEach(() => {
+    store.clear()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value)
+      },
+      removeItem: (key: string) => {
+        store.delete(key)
+      },
+    })
     clearSavedRun()
   })
 
