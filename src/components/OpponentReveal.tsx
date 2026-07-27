@@ -7,16 +7,22 @@ import styles from './OpponentReveal.module.css'
 export interface OpponentRevealProps {
   champion: ChampionTeam
   era: EraId
+  attemptNumber: number
   onStartDraft: () => void
 }
 
-export function OpponentReveal({ champion, era, onStartDraft }: OpponentRevealProps) {
+export function OpponentReveal({
+  champion,
+  era,
+  attemptNumber,
+  onStartDraft,
+}: OpponentRevealProps) {
   const eraConfig = getEraConfig(era)
 
   return (
     <section className={styles.root} aria-label="Opponent reveal">
       <p className={styles.kicker}>
-        {eraConfig.label} · {champion.seasonYear} · Game 7
+        {eraConfig.label} · Attempt #{attemptNumber} · Game 7
       </p>
 
       <div className={styles.matchup}>
@@ -37,7 +43,8 @@ export function OpponentReveal({ champion, era, onStartDraft }: OpponentRevealPr
         <span className={styles.ratingLabel}>Championship Rating</span>
         <span className={styles.ratingValue}>{champion.rating}</span>
         <p className={styles.ratingHint}>
-          Build a five-man roster under the cap, then survive the sim.
+          Win once to clear the challenge. Build a five-man roster under the cap, then survive the
+          sim.
         </p>
       </div>
 
@@ -49,6 +56,7 @@ export function OpponentReveal({ champion, era, onStartDraft }: OpponentRevealPr
           trackButtonClick(AnalyticsEvent.CLICK_START_DRAFT, {
             era,
             champion_id: champion.id,
+            attempt: attemptNumber,
           })
           onStartDraft()
         }}

@@ -1,14 +1,14 @@
-import { getChampionsByEraOrdered } from '../data/champions'
 import { getEraConfig } from '../data/eras'
 import { ALL_BADGE_IDS, badgeLabel } from '../lib/badges'
 import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { Player } from '../schemas/player'
 import type { BadgeId, ChampionTeam, EraId, SessionRecord, SimResult } from '../types/game'
+import { LINEUP_SLOTS } from '../types/game'
 import { Button } from '../ui/Button'
 import { ShareResultButton } from './ShareResultButton'
 import styles from './EraCompleteScreen.module.css'
 
-export interface EraCompleteScreenProps {
+export interface ChallengeClearScreenProps {
   era: EraId
   session: SessionRecord
   result: SimResult
@@ -16,13 +16,15 @@ export interface EraCompleteScreenProps {
   roster: readonly Player[]
   capSpend: number
   capLimit: number
+  clearAttempts: number
+  clearIsBest: boolean
   badgesEarned: readonly BadgeId[]
   badgeCounts: Record<BadgeId, number>
   onRunItBack: () => void
   onChangeEra: () => void
 }
 
-export function EraCompleteScreen({
+export function ChallengeClearScreen({
   era,
   session,
   result,
@@ -30,29 +32,31 @@ export function EraCompleteScreen({
   roster,
   capSpend,
   capLimit,
+  clearAttempts,
+  clearIsBest,
   badgesEarned,
   badgeCounts,
   onRunItBack,
   onChangeEra,
-}: EraCompleteScreenProps) {
+}: ChallengeClearScreenProps) {
   const eraConfig = getEraConfig(era)
-  const totalChampions = getChampionsByEraOrdered(era).length
   const totalBadges = ALL_BADGE_IDS.reduce((sum, id) => sum + badgeCounts[id], 0)
 
   return (
-    <section className={styles.root} aria-label="Era complete">
+    <section className={styles.root} aria-label="Challenge cleared">
       <header className={styles.header}>
-        <p className={styles.kicker}>{eraConfig.label} · Complete</p>
-        <h2 className={styles.title}>Dynasty Run Complete</h2>
+        <p className={styles.kicker}>{eraConfig.label} · Challenge Cleared</p>
+        <h2 className={styles.title}>Cleared in {clearAttempts} Attempts</h2>
         <p className={styles.subtitle}>
-          You defeated all {totalChampions} champions in the {eraConfig.label}.
+          {clearIsBest ? 'New personal best! ' : ''}
+          You beat {champion.name} {result.userScore}–{result.championScore} in Game 7.
         </p>
       </header>
 
       <div className={styles.stats}>
         <div className={styles.stat}>
-          <span className={styles.statValue}>{session.wins}</span>
-          <span className={styles.statLabel}>Wins this run</span>
+          <span className={styles.statValue}>{clearAttempts}</span>
+          <span className={styles.statLabel}>Attempts this clear</span>
         </div>
         <div className={styles.stat}>
           <span className={styles.statValue}>{totalBadges}</span>
@@ -62,9 +66,26 @@ export function EraCompleteScreen({
           <span className={styles.statValue}>
             {session.streakType === 'win' ? session.streak : '—'}
           </span>
-          <span className={styles.statLabel}>Final win streak</span>
+          <span className={styles.statLabel}>Win streak</span>
         </div>
       </div>
+
+      {roster.length > 0 ? (
+        <ul className={styles.rosterGrid} aria-label="Your starting five">
+          {LINEUP_SLOTS.map((slot, index) => {
+            const player = roster[index]
+            if (!player) {
+              return null
+            }
+            return (
+              <li key={slot} className={styles.badge}>
+                {slot} {player.player} ({player.rating})
+                {result.overCap ? '' : ' · Under cap'}
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
 
       {badgesEarned.length > 0 ? (
         <div className={styles.badges}>
@@ -107,9 +128,12 @@ export function EraCompleteScreen({
             onChangeEra()
           }}
         >
-          Change Era
+          Choose Another Era
         </Button>
       </div>
     </section>
   )
 }
+
+/** @deprecated Use ChallengeClearScreen */
+export const EraCompleteScreen = ChallengeClearScreen

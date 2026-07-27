@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { trackEvent } from '../lib/analytics'
-import { getNextChampion } from '../data/champions'
+import { pickRandomChampion } from '../data/champions'
 import { getEraConfig } from '../data/eras'
 import { loadPlayerPool } from '../data/playerRepository'
 import type { Player } from '../schemas/player'
@@ -15,11 +15,13 @@ import {
   type PositionDecision,
 } from '../lib/gameLog'
 import {
-  isEraComplete,
-  loadDefeatedChampions,
-  markChampionDefeated,
-  resetEraProgress,
-} from '../lib/eraProgress'
+  beginAttempt,
+  getEraChallengeRecord,
+  loadChallengeProgress,
+  recordChallengeClear,
+  resetEraChallenge,
+  type ChallengeProgress,
+} from '../lib/challengeProgress'
 import { loadSavedRun, saveSavedRun } from '../lib/savedRun'
 import {
   canAdvance,
@@ -38,41 +40,22 @@ import {
 } from '../lib/draft'
 import { assignBadges, simulateGame7 } from '../lib/rating'
 import {
-  getChampionAttempts,
   loadPersistentProgress,
   resetPersistentSession,
   updatePersistentProgress,
   type PersistentProgress,
 } from '../lib/sessionProgress'
-import type {
-  Difficulty,
-  DraftState,
-  EraId,
-  GameState,
-  SessionRecord,
-} from '../types/game'
+import type { DraftState, EraId, GameState, SessionRecord } from '../types/game'
+import { CHALLENGE_DIFFICULTY } from '../types/game'
 
 function createInitialSession(): SessionRecord {
   return loadPersistentProgress().session
-}
-
-function getResumableRun() {
-  const saved = loadSavedRun()
-  if (!saved) {
-    return null
-  }
-  const defeatedChampionIds = loadDefeatedChampions(saved.era)
-  if (isEraComplete(saved.era, defeatedChampionIds)) {
-    return null
-  }
-  return saved
 }
 
 function createInitialState(): GameState {
   return {
     screen: 'start',
     era: null,
-    difficulty: 'normal',
     champion: null,
     draft: null,
     simResult: null,
@@ -80,7 +63,7 @@ function createInitialState(): GameState {
     muted: false,
     seed: 0,
     session: createInitialSession(),
-    defeatedChampionIds: [],
+    attemptNumber: 0,
   }
 }
 
@@ -88,19 +71,19 @@ export interface UseGameStateResult extends GameState {
   loading: boolean
   error: string | null
   lastEra: EraId
-  lastDifficulty: Difficulty
+  challengeProgress: ChallengeProgress
+  clearAttempts: number | null
+  clearIsBest: boolean
   positionDecisions: PositionDecision[]
   persistentProgress: PersistentProgress
-  championAttempts: number
-  onSelectEra: (era: EraId) => void
-  onSelectDifficulty: (difficulty: Difficulty) => void
+  onStartChallenge: (era: EraId) => void
   onStartDraft: () => void
   onSign: () => void
   onNextPosition: () => void
   onStartSim: () => void
   onHit: () => void
   onSimComplete: () => void
-  onNextHand: () => void
+  onTryAgain: () => void
   onPlayAgain: () => void
   onRunItBack: () => void
   onToggleMute: () => void
@@ -111,18 +94,19 @@ export interface UseGameStateResult extends GameState {
 }
 
 export function useGameState(): UseGameStateResult {
-  const resumableRun = getResumableRun()
   const [state, setState] = useState<GameState>(createInitialState)
-  const [loading, setLoading] = useState(Boolean(resumableRun))
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastEra, setLastEra] = useState<EraId>(resumableRun?.era ?? loadSavedRun()?.era ?? '2000s')
-  const [lastDifficulty, setLastDifficulty] = useState<Difficulty>(
-    resumableRun?.difficulty ?? loadSavedRun()?.difficulty ?? 'normal',
-  )
+  const [lastEra, setLastEra] = useState<EraId>(loadSavedRun()?.era ?? '2000s')
   const [pool, setPool] = useState<Player[] | null>(null)
   const [persistentProgress, setPersistentProgress] = useState<PersistentProgress>(
     loadPersistentProgress,
   )
+  const [challengeProgress, setChallengeProgress] = useState<ChallengeProgress>(
+    loadChallengeProgress,
+  )
+  const [clearAttempts, setClearAttempts] = useState<number | null>(null)
+  const [clearIsBest, setClearIsBest] = useState(false)
   const [positionDecisions, setPositionDecisions] = useState<PositionDecision[]>(
     createEmptyPositionDecisions,
   )
@@ -130,20 +114,25 @@ export function useGameState(): UseGameStateResult {
   const rngRef = useRef<SeededRandom | null>(null)
   const seedRef = useRef(0)
   const pendingEraRef = useRef<EraId | null>(null)
+  const previousChampionIdRef = useRef<string | null>(null)
   const loadGenerationRef = useRef(0)
-  const resumedRef = useRef(false)
 
-  const beginEraLoad = useCallback(
+  const beginChallenge = useCallback(
     async (
       era: EraId,
-      difficulty: Difficulty,
       options: {
         keepSession?: boolean
-        resetProgress?: boolean
         skipToDraft?: boolean
+        newAttempt?: boolean
+        excludeChampionId?: string | null
       } = {},
     ) => {
-      const { keepSession = false, resetProgress = false, skipToDraft = false } = options
+      const {
+        keepSession = false,
+        skipToDraft = false,
+        newAttempt = true,
+        excludeChampionId = previousChampionIdRef.current,
+      } = options
       const loadGeneration = loadGenerationRef.current + 1
       loadGenerationRef.current = loadGeneration
       setLoading(true)
@@ -156,52 +145,39 @@ export function useGameState(): UseGameStateResult {
           return
         }
 
-        if (resetProgress) {
-          resetEraProgress(era)
-        }
-
-        let defeatedChampionIds = loadDefeatedChampions(era)
-        if (isEraComplete(era, defeatedChampionIds)) {
-          resetEraProgress(era)
-          defeatedChampionIds = []
-        }
-
-        const champion = getNextChampion(era, defeatedChampionIds)
-        if (!champion) {
-          throw new RangeError(`No champion available for era ${era}`)
-        }
-
+        const attemptNumber = newAttempt ? beginAttempt(era) : getEraChallengeRecord(era).attemptsSinceClear
         const seed = Date.now() >>> 0
         const rng = createSeededRandom(seed)
+        const champion = pickRandomChampion(era, rng, excludeChampionId ?? undefined)
         const eraConfig = getEraConfig(era)
         const filtered = filterPoolByEra(players, era)
         const draft = skipToDraft ? initDraft(filtered, rng, era, eraConfig.cap) : null
 
         rngRef.current = rng
         seedRef.current = seed
+        previousChampionIdRef.current = champion.id
         setPool(players)
         setLastEra(era)
-        setLastDifficulty(difficulty)
-        saveSavedRun({ era, difficulty })
+        saveSavedRun({ era })
+        setChallengeProgress(loadChallengeProgress())
         setPositionDecisions(createEmptyPositionDecisions())
         decisionsRef.current = createEmptyPositionDecisions()
         setState((current) => ({
           ...current,
           screen: skipToDraft ? 'draft' : 'champion',
           era,
-          difficulty,
           champion,
           draft,
           simResult: null,
           badges: [],
           seed,
-          defeatedChampionIds,
+          attemptNumber,
           session: keepSession ? current.session : loadPersistentProgress().session,
         }))
         pendingEraRef.current = null
-        trackEvent('game_start', {
+        trackEvent('challenge_start', {
           era,
-          difficulty,
+          attempt: attemptNumber,
           skip_to_draft: skipToDraft,
         })
       } catch (loadError) {
@@ -222,28 +198,17 @@ export function useGameState(): UseGameStateResult {
     [],
   )
 
-  const onSelectEra = useCallback(
+  const onStartChallenge = useCallback(
     (era: EraId) => {
-      const defeatedChampionIds = loadDefeatedChampions(era)
-      const shouldReset = isEraComplete(era, defeatedChampionIds)
-      void beginEraLoad(era, lastDifficulty, { resetProgress: shouldReset })
+      void beginChallenge(era)
     },
-    [beginEraLoad, lastDifficulty],
+    [beginChallenge],
   )
-
-  const onSelectDifficulty = useCallback((difficulty: Difficulty) => {
-    setLastDifficulty(difficulty)
-    const saved = loadSavedRun()
-    if (saved) {
-      saveSavedRun({ ...saved, difficulty })
-    }
-    setState((current) => ({ ...current, difficulty }))
-  }, [])
 
   const onRetryLoad = useCallback(() => {
     const era = pendingEraRef.current ?? lastEra
-    void beginEraLoad(era, lastDifficulty)
-  }, [beginEraLoad, lastDifficulty, lastEra])
+    void beginChallenge(era, { newAttempt: false })
+  }, [beginChallenge, lastEra])
 
   const onStartDraft = useCallback(() => {
     const rng = rngRef.current
@@ -304,13 +269,6 @@ export function useGameState(): UseGameStateResult {
       })
 
       const nextDraft = signOffer(draft)
-      if (!isDraftComplete(nextDraft)) {
-        return {
-          ...current,
-          draft: nextDraft,
-        }
-      }
-
       return {
         ...current,
         draft: nextDraft,
@@ -335,7 +293,7 @@ export function useGameState(): UseGameStateResult {
         roster: starters,
         champion: current.champion,
         eraId: current.era,
-        difficulty: current.difficulty,
+        difficulty: CHALLENGE_DIFFICULTY,
         capLimit: eraConfig.cap,
         hitPenaltySpend: current.draft.hitPenaltySpend,
         rng,
@@ -395,7 +353,7 @@ export function useGameState(): UseGameStateResult {
         buildGameLogEntry({
           seed: current.seed,
           era: current.era,
-          difficulty: current.difficulty,
+          difficulty: CHALLENGE_DIFFICULTY,
           champion: current.champion,
           draft: current.draft,
           decisions: decisionsRef.current,
@@ -414,73 +372,83 @@ export function useGameState(): UseGameStateResult {
       })
       setPersistentProgress(progress)
 
-      let defeatedChampionIds = current.defeatedChampionIds
-      if (current.simResult.outcome === 'win') {
-        defeatedChampionIds = markChampionDefeated(current.era, current.champion.id)
+      const won = current.simResult.outcome === 'win'
+      let screen: GameState['screen'] = 'result'
+      if (won) {
+        const clearResult = recordChallengeClear(current.era)
+        setClearAttempts(clearResult.attempts)
+        setClearIsBest(clearResult.isBest)
+        setChallengeProgress(loadChallengeProgress())
+        screen = 'challengeClear'
+        trackEvent('challenge_clear', {
+          era: current.era,
+          attempts: clearResult.attempts,
+          is_best: clearResult.isBest,
+          total_clears: clearResult.totalClears,
+        })
+      } else {
+        trackEvent('challenge_retry', {
+          era: current.era,
+          outcome: current.simResult.outcome,
+          attempt: current.attemptNumber,
+        })
       }
-
-      const eraJustCompleted =
-        current.simResult.outcome === 'win' && isEraComplete(current.era, defeatedChampionIds)
 
       trackEvent('game_result', {
         outcome: current.simResult.outcome,
         era: current.era,
-        difficulty: current.difficulty,
         champion_id: current.champion.id,
         margin: current.simResult.margin,
         badge_count: badges.length,
         cap_spend: spend,
         cap_limit: eraConfig.cap,
+        attempt: current.attemptNumber,
       })
-      if (eraJustCompleted) {
-        trackEvent('era_complete', {
-          era: current.era,
-          difficulty: current.difficulty,
-        })
-      }
 
       return {
         ...current,
-        screen: eraJustCompleted ? 'eraComplete' : 'result',
+        screen,
         badges,
         session: progress.session,
-        defeatedChampionIds,
       }
     })
   }, [])
 
-  const onNextHand = useCallback(() => {
+  const onTryAgain = useCallback(() => {
     if (!state.era) {
       return
     }
-    void beginEraLoad(state.era, state.difficulty, { keepSession: true, skipToDraft: true })
-  }, [beginEraLoad, state.difficulty, state.era])
+    void beginChallenge(state.era, { keepSession: true })
+  }, [beginChallenge, state.era])
 
   const onRunItBack = useCallback(() => {
     if (!state.era) {
       return
     }
-    resetEraProgress(state.era)
+    resetEraChallenge(state.era)
     const progress = resetPersistentSession()
     setPersistentProgress(progress)
-    saveSavedRun({ era: state.era, difficulty: state.difficulty })
-    void beginEraLoad(state.era, state.difficulty, { keepSession: false })
-  }, [beginEraLoad, state.difficulty, state.era])
+    setChallengeProgress(loadChallengeProgress())
+    setClearAttempts(null)
+    setClearIsBest(false)
+    void beginChallenge(state.era, { keepSession: false })
+  }, [beginChallenge, state.era])
 
   const onPlayAgain = useCallback(() => {
     rngRef.current = null
+    previousChampionIdRef.current = null
     setPool(null)
     setPositionDecisions(createEmptyPositionDecisions())
-    const defeatedChampionIds = state.era ? loadDefeatedChampions(state.era) : []
+    setClearAttempts(null)
+    setClearIsBest(false)
+    setChallengeProgress(loadChallengeProgress())
     setPersistentProgress(loadPersistentProgress())
     setState((current) => ({
       ...createInitialState(),
       muted: current.muted,
-      difficulty: current.difficulty,
       session: loadPersistentProgress().session,
-      defeatedChampionIds,
     }))
-  }, [state.era])
+  }, [])
 
   const onToggleMute = useCallback(() => {
     setState((current) => ({
@@ -497,26 +465,6 @@ export function useGameState(): UseGameStateResult {
     clearGameLogs()
   }, [])
 
-  const storedAttempts = state.champion
-    ? getChampionAttempts(persistentProgress, state.champion.id)
-    : 0
-  const championAttempts =
-    state.screen === 'result' || state.screen === 'eraComplete'
-      ? storedAttempts
-      : storedAttempts + (state.champion ? 1 : 0)
-
-  useEffect(() => {
-    if (resumedRef.current) {
-      return
-    }
-    const saved = getResumableRun()
-    if (!saved) {
-      return
-    }
-    resumedRef.current = true
-    void beginEraLoad(saved.era, saved.difficulty, { keepSession: true })
-  }, [beginEraLoad])
-
   useEffect(() => {
     if (loading || error) {
       return
@@ -529,19 +477,19 @@ export function useGameState(): UseGameStateResult {
     loading,
     error,
     lastEra,
-    lastDifficulty,
+    challengeProgress,
+    clearAttempts,
+    clearIsBest,
     positionDecisions,
     persistentProgress,
-    championAttempts,
-    onSelectEra,
-    onSelectDifficulty,
+    onStartChallenge,
     onStartDraft,
     onSign,
     onNextPosition,
     onStartSim,
     onHit,
     onSimComplete,
-    onNextHand,
+    onTryAgain,
     onPlayAgain,
     onRunItBack,
     onToggleMute,

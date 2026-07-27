@@ -61,21 +61,16 @@ export function getChampionById(id: string): ChampionTeam | undefined {
   return CHAMPION_TEAMS.find((champion) => champion.id === id)
 }
 
-export function getNextChampion(
+export function pickRandomChampion(
   eraId: EraId,
-  defeatedIds: readonly string[],
-): ChampionTeam | null {
-  const champions = getChampionsByEraOrdered(eraId)
-  return champions.find((champion) => !defeatedIds.includes(champion.id)) ?? null
-}
-
-export function isEraComplete(eraId: EraId, defeatedIds: readonly string[]): boolean {
-  const champions = getChampionsByEraOrdered(eraId)
-  return champions.length > 0 && champions.every((champion) => defeatedIds.includes(champion.id))
-}
-
-export function pickRandomChampion(eraId: EraId, rng: RandomSource): ChampionTeam {
-  const pool = eraId === 'timeMachine' ? CHAMPION_TEAMS : CHAMPIONS_BY_ERA[eraId]
+  rng: RandomSource,
+  excludeId?: string,
+): ChampionTeam {
+  const fullPool = eraId === 'timeMachine' ? CHAMPION_TEAMS : CHAMPIONS_BY_ERA[eraId]
+  const pool =
+    excludeId && fullPool.length > 1
+      ? fullPool.filter((champion) => champion.id !== excludeId)
+      : fullPool
   const index = Math.floor(rng() * pool.length)
   const champion = pool[index]
 

@@ -6,7 +6,10 @@ export type EraId = '2000s' | '2010s' | '2020s' | 'timeMachine'
 
 export type Difficulty = 'normal' | 'hard'
 
-export type Screen = 'start' | 'champion' | 'draft' | 'sim' | 'result' | 'eraComplete'
+/** Canonical blind-contract difficulty for the single-opponent challenge. */
+export const CHALLENGE_DIFFICULTY: Difficulty = 'hard'
+
+export type Screen = 'start' | 'champion' | 'draft' | 'sim' | 'result' | 'challengeClear'
 
 export type BadgeId =
   | 'capGod'
@@ -116,7 +119,6 @@ export interface SessionRecord {
 export interface GameState {
   screen: Screen
   era: EraId | null
-  difficulty: Difficulty
   champion: ChampionTeam | null
   draft: DraftState | null
   simResult: SimResult | null
@@ -124,7 +126,8 @@ export interface GameState {
   muted: boolean
   seed: number
   session: SessionRecord
-  defeatedChampionIds: string[]
+  /** 1-based attempt number for the current era challenge since last clear. */
+  attemptNumber: number
 }
 
 export const RULES_VERSION = '3.0.0'

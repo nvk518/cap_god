@@ -10,24 +10,24 @@
       "count": 1738,
       "salaryMin": 63127,
       "salaryMax": 29464000,
-      "checksumSha256": "4bbb436f2396964628bd8bf3e21f92a82beff8c8816cb497223766d9480bab63"
+      "checksumSha256": "a662113f1ebd25d266950fe1987fb20aa8ac4e34c7e837e9ebf65a9c06a188e9"
     },
     "2010s": {
       "file": "2010s.json",
       "count": 2084,
       "salaryMin": 13824,
       "salaryMax": 40231758,
-      "checksumSha256": "0cd52734f83ec290c7058620d9c49f5c54ec9f02a4c10d580fd1d0c0636ffc78"
+      "checksumSha256": "a0ba1dc5a1e7a928187846e790a7c2fa0c413e3f4b21477eede8a2dca47a03ac"
     },
     "2020s": {
       "file": "2020s.json",
       "count": 1167,
       "salaryMin": 6201,
       "salaryMax": 55761216,
-      "checksumSha256": "72493d52230640cdbe937caffbb2200546c32bef737408940ebe554c3a341c8a"
+      "checksumSha256": "60adcefc3005d69f65b01b4285af61f5a31e7e1401d30f4c7a002c8dd535f305"
     }
   },
   "positionsFile": "season_positions.json",
-  "positionsChecksumSha256": "4b18f162eff627fecd5ae7d2f03ea885987ca9f16ec7b6b7c69055e41bcd439e",
+  "positionsChecksumSha256": "dab6626e7eb60b2e06bab01ada70e27fa29389225322dd9b7d18106a722e493a",
   "minRating": 74
 }

@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import { parsePlayers, type Player } from '../schemas/player'
 import { pickRandomChampion } from '../data/champions'
 import { getEraCap } from '../data/eras'
-import type { Difficulty, DraftState, EraId } from '../types/game'
-import { LINEUP_SLOTS } from '../types/game'
+import type { DraftState, EraId } from '../types/game'
+import { CHALLENGE_DIFFICULTY, LINEUP_SLOTS } from '../types/game'
 import {
   createPositionPackets,
   createSeededRandom,
@@ -22,7 +22,6 @@ import { simulateGame7 } from './rating'
 
 export interface BalanceMetrics {
   era: EraId
-  difficulty: Difficulty
   hands: number
   legalCapRate: number
   informedWinRate: number
@@ -33,6 +32,8 @@ export interface BalanceMetrics {
   firstOfferSignRate: number
   secondOfferSignRate: number
   forcedOfferSignRate: number
+  perChampionWinRates: Record<string, number>
+  perChampionHands: Record<string, number>
 }
 
 function loadEraPool(dataDir: string, era: EraId): Player[] {
@@ -136,110 +137,117 @@ export function runBalanceSimulation(
   seed = 42,
 ): BalanceMetrics[] {
   const eras: EraId[] = ['2000s', '2010s', '2020s', 'timeMachine']
-  const difficulties: Difficulty[] = ['normal', 'hard']
   const metrics: BalanceMetrics[] = []
 
   for (const era of eras) {
     const pool = loadEraPool(dataDir, era)
     const capLimit = getEraCap(era)
 
-    for (const difficulty of difficulties) {
-      let legalCaps = 0
-      let informedWins = 0
-      let randomWins = 0
-      let busts = 0
-      let nearLosses = 0
-      let duplicateOffers = 0
-      let firstSigns = 0
-      let secondSigns = 0
-      let forcedSigns = 0
+    let legalCaps = 0
+    let informedWins = 0
+    let randomWins = 0
+    let busts = 0
+    let nearLosses = 0
+    let duplicateOffers = 0
+    let firstSigns = 0
+    let secondSigns = 0
+    let forcedSigns = 0
+    const championWins: Record<string, number> = {}
+    const championHands: Record<string, number> = {}
 
-      for (let hand = 0; hand < hands; hand += 1) {
-        const rng = createSeededRandom(seed + hand * 17 + era.length * 100 + difficulty.length)
-        const champion = pickRandomChampion(era, rng)
-        const filtered = filterPoolByEra(pool, era)
-        const packets = createPositionPackets(filtered, era, capLimit, rng)
-        if (countDuplicateNames(packets) > 0) {
-          duplicateOffers += 1
-        }
+    for (let hand = 0; hand < hands; hand += 1) {
+      const rng = createSeededRandom(seed + hand * 17 + era.length * 100)
+      const champion = pickRandomChampion(era, rng)
+      championHands[champion.id] = (championHands[champion.id] ?? 0) + 1
+      const filtered = filterPoolByEra(pool, era)
+      const packets = createPositionPackets(filtered, era, capLimit, rng)
+      if (countDuplicateNames(packets) > 0) {
+        duplicateOffers += 1
+      }
 
-        const informedDraft = informedPlay(initDraft(filtered, rng, era, capLimit), era, capLimit, rng)
-        const starters = getFinalStarters(informedDraft)
-        const overCap = isOverCap(starters, era, capLimit, informedDraft.hitPenaltySpend)
-        if (!overCap) {
-          legalCaps += 1
-        } else {
-          busts += 1
-        }
+      const informedDraft = informedPlay(initDraft(filtered, rng, era, capLimit), era, capLimit, rng)
+      const starters = getFinalStarters(informedDraft)
+      const overCap = isOverCap(starters, era, capLimit, informedDraft.hitPenaltySpend)
+      if (!overCap) {
+        legalCaps += 1
+      } else {
+        busts += 1
+      }
 
-        for (const slot of LINEUP_SLOTS) {
-          const signed = informedDraft.starters[slot]
-          if (!signed) {
-            continue
-          }
-          const packet = informedDraft.positionPackets[slot]
-          const index = packet.findIndex((player) => player.id === signed.id)
-          if (index === 0) {
-            firstSigns += 1
-          } else if (index === 1) {
-            secondSigns += 1
-          } else if (index === 2) {
-            forcedSigns += 1
-          }
+      for (const slot of LINEUP_SLOTS) {
+        const signed = informedDraft.starters[slot]
+        if (!signed) {
+          continue
         }
-
-        const informedSim = simulateGame7({
-          roster: starters,
-          champion,
-          eraId: era,
-          difficulty,
-          capLimit,
-          hitPenaltySpend: informedDraft.hitPenaltySpend,
-          rng,
-        })
-        if (informedSim.outcome === 'win') {
-          informedWins += 1
-        }
-        if (informedSim.outcome === 'loss' && informedSim.margin <= 5) {
-          nearLosses += 1
-        }
-
-        const randomDraft = randomPlay(
-          initDraft(filtered, createSeededRandom(seed + hand * 3), era, capLimit),
-          era,
-          capLimit,
-          createSeededRandom(seed + hand + 99),
-        )
-        const randomStarters = getFinalStarters(randomDraft)
-        const randomSim = simulateGame7({
-          roster: randomStarters,
-          champion,
-          eraId: era,
-          difficulty,
-          capLimit,
-          hitPenaltySpend: randomDraft.hitPenaltySpend,
-          rng: createSeededRandom(seed + hand + 199),
-        })
-        if (randomSim.outcome === 'win') {
-          randomWins += 1
+        const packet = informedDraft.positionPackets[slot]
+        const index = packet.findIndex((player) => player.id === signed.id)
+        if (index === 0) {
+          firstSigns += 1
+        } else if (index === 1) {
+          secondSigns += 1
+        } else if (index === 2) {
+          forcedSigns += 1
         }
       }
 
-      metrics.push({
-        era,
-        difficulty,
-        hands,
-        legalCapRate: legalCaps / hands,
-        informedWinRate: informedWins / hands,
-        randomWinRate: randomWins / hands,
-        bustRate: busts / hands,
-        nearLossRate: nearLosses / hands,
-        duplicateOfferRate: duplicateOffers / hands,
-        firstOfferSignRate: firstSigns / (hands * LINEUP_SLOTS.length),
-        secondOfferSignRate: secondSigns / (hands * LINEUP_SLOTS.length),
-        forcedOfferSignRate: forcedSigns / (hands * LINEUP_SLOTS.length),
+      const informedSim = simulateGame7({
+        roster: starters,
+        champion,
+        eraId: era,
+        difficulty: CHALLENGE_DIFFICULTY,
+        capLimit,
+        hitPenaltySpend: informedDraft.hitPenaltySpend,
+        rng,
       })
+      if (informedSim.outcome === 'win') {
+        informedWins += 1
+        championWins[champion.id] = (championWins[champion.id] ?? 0) + 1
+      }
+      if (informedSim.outcome === 'loss' && informedSim.margin <= 5) {
+        nearLosses += 1
+      }
+
+      const randomDraft = randomPlay(
+        initDraft(filtered, createSeededRandom(seed + hand * 3), era, capLimit),
+        era,
+        capLimit,
+        createSeededRandom(seed + hand + 99),
+      )
+      const randomStarters = getFinalStarters(randomDraft)
+      const randomSim = simulateGame7({
+        roster: randomStarters,
+        champion,
+        eraId: era,
+        difficulty: CHALLENGE_DIFFICULTY,
+        capLimit,
+        hitPenaltySpend: randomDraft.hitPenaltySpend,
+        rng: createSeededRandom(seed + hand + 199),
+      })
+      if (randomSim.outcome === 'win') {
+        randomWins += 1
+      }
     }
+
+    const perChampionWinRates: Record<string, number> = {}
+    for (const [championId, count] of Object.entries(championHands)) {
+      perChampionWinRates[championId] = (championWins[championId] ?? 0) / count
+    }
+
+    metrics.push({
+      era,
+      hands,
+      legalCapRate: legalCaps / hands,
+      informedWinRate: informedWins / hands,
+      randomWinRate: randomWins / hands,
+      bustRate: busts / hands,
+      nearLossRate: nearLosses / hands,
+      duplicateOfferRate: duplicateOffers / hands,
+      firstOfferSignRate: firstSigns / (hands * LINEUP_SLOTS.length),
+      secondOfferSignRate: secondSigns / (hands * LINEUP_SLOTS.length),
+      forcedOfferSignRate: forcedSigns / (hands * LINEUP_SLOTS.length),
+      perChampionWinRates,
+      perChampionHands: championHands,
+    })
   }
 
   return metrics

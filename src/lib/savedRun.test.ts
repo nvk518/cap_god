@@ -18,14 +18,19 @@ describe('savedRun', () => {
     clearSavedRun()
   })
 
-  it('persists and loads the active run', () => {
-    saveSavedRun({ era: '2010s', difficulty: 'hard' })
-    expect(loadSavedRun()).toEqual({ era: '2010s', difficulty: 'hard' })
+  it('persists and loads the last selected era', () => {
+    saveSavedRun({ era: '2010s' })
+    expect(loadSavedRun()).toEqual({ era: '2010s' })
   })
 
   it('clears the saved run', () => {
-    saveSavedRun({ era: '2000s', difficulty: 'normal' })
+    saveSavedRun({ era: '2000s' })
     clearSavedRun()
     expect(loadSavedRun()).toBeNull()
+  })
+
+  it('migrates legacy saved runs that include difficulty', () => {
+    store.set('cap-god-saved-run-v1', JSON.stringify({ era: '2020s', difficulty: 'hard' }))
+    expect(loadSavedRun()).toEqual({ era: '2020s' })
   })
 })

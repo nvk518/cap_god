@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { getChampionsByEraOrdered } from '../data/champions'
 import { ALL_BADGE_IDS, badgeDescription, badgeLabel } from '../lib/badges'
 import { clearGameLogs, exportGameLogsCsv, exportGameLogsJson, loadGameLogs } from '../lib/gameLog'
-import { getRemainingChampions } from '../lib/eraProgress'
 import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { Player } from '../schemas/player'
 import { Button } from '../ui/Button'
@@ -20,11 +18,9 @@ export interface ResultScreenProps {
   roster: readonly Player[]
   capSpend: number
   capLimit: number
-  seed: number
-  defeatedIds: readonly string[]
+  attemptNumber: number
   badgeCounts: Record<BadgeId, number>
-  championAttempts: number
-  onNextHand: () => void
+  onTryAgain: () => void
   onPlayAgain: () => void
 }
 
@@ -33,9 +29,6 @@ function joinClasses(...values: Array<string | false | undefined>): string {
 }
 
 function outcomeLabel(result: SimResult): string {
-  if (result.outcome === 'win') {
-    return 'You Win!'
-  }
   if (result.outcome === 'push') {
     return 'Push — Exact Tie'
   }
@@ -43,9 +36,6 @@ function outcomeLabel(result: SimResult): string {
 }
 
 function outcomeClass(result: SimResult): string {
-  if (result.outcome === 'win') {
-    return styles.win ?? ''
-  }
   if (result.outcome === 'push') {
     return styles.push ?? ''
   }
@@ -70,31 +60,20 @@ export function ResultScreen({
   roster,
   capSpend,
   capLimit,
-  defeatedIds,
+  attemptNumber,
   badgeCounts,
-  championAttempts,
-  onNextHand,
+  onTryAgain,
   onPlayAgain,
 }: ResultScreenProps) {
   const [showStats, setShowStats] = useState(false)
   const [logsCleared, setLogsCleared] = useState(false)
-  const remaining = getRemainingChampions(era, defeatedIds)
-  const nextUp = remaining[0]
-  const allChampions = getChampionsByEraOrdered(era)
-
-  const nextGoal =
-    result.outcome === 'win' && nextUp
-      ? `Next: ${nextUp.name} (${nextUp.rating})`
-      : result.outcome !== 'win'
-        ? `Rematch ${champion.name} to advance`
-        : null
 
   return (
     <section className={styles.root} aria-label="Result screen">
       <header className={styles.header}>
         <h2 className={joinClasses(styles.outcome, outcomeClass(result))}>{outcomeLabel(result)}</h2>
         <p className={styles.subtitle}>
-          vs {champion.name} · Attempt #{championAttempts}
+          vs {champion.name} · Attempt #{attemptNumber}
         </p>
       </header>
 
@@ -150,14 +129,11 @@ export function ResultScreen({
         </div>
       </div>
 
-      {nextGoal ? <p className={styles.nextGoal}>{nextGoal}</p> : null}
+      <p className={styles.nextGoal}>New opponent, new draft — win once to clear the challenge.</p>
 
       <div className={styles.badges}>
         <div className={styles.badgesHeader}>
           <h3 className={styles.sectionTitle}>Badges</h3>
-          <span className={styles.progressCount}>
-            {defeatedIds.length}/{allChampions.length}
-          </span>
         </div>
 
         {badges.length > 0 ? (
@@ -195,14 +171,15 @@ export function ResultScreen({
           size="sm"
           fullWidth
           onClick={() => {
-            trackButtonClick(AnalyticsEvent.CLICK_NEXT_HAND, {
+            trackButtonClick(AnalyticsEvent.CLICK_TRY_AGAIN, {
               era,
               outcome: result.outcome,
+              attempt: attemptNumber,
             })
-            onNextHand()
+            onTryAgain()
           }}
         >
-          {result.outcome === 'win' ? 'Next Year' : 'Try Again'}
+          Try Again
         </Button>
         <Button
           variant="secondary"
@@ -214,7 +191,7 @@ export function ResultScreen({
             onPlayAgain()
           }}
         >
-          Change Era
+          Choose Another Era
         </Button>
       </div>
 

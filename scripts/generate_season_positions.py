@@ -44,6 +44,19 @@ def infer_positions(record: dict[str, Any]) -> list[str]:
         "C": trb_rate * 2.0 + pts_rate * 0.2,
     }
 
+    # High-volume rebounders were skewing toward SF/SG because scoring weights
+    # dominate the base formula. Nudge frontcourt up and perimeter down by trb rate.
+    if trb_rate >= 0.18:
+        scores["SF"] *= 0.75
+        scores["SG"] *= 0.55
+        scores["PG"] *= 0.35
+    if trb_rate >= 0.24:
+        scores["PF"] *= 1.15
+        scores["C"] *= 1.15
+    if trb_rate >= 0.30:
+        scores["PF"] *= 1.1
+        scores["C"] *= 1.1
+
     ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
     primary = ranked[0][0]
     secondary = ranked[1][0]

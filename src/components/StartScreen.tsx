@@ -1,61 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getEraConfig } from '../data/eras'
-import { getEraProgressStats } from '../lib/eraProgress'
 import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
-import { loadSavedRun } from '../lib/savedRun'
+import { getEraChallengeRecord } from '../lib/challengeProgress'
 import { Button, IconToggle, RulesDialog, SegmentedControl } from '../ui'
-import type { Difficulty, EraConfig, EraId } from '../types/game'
+import type { EraConfig, EraId } from '../types/game'
 import { DRAFT_OFFERS_PER_SLOT } from '../types/game'
-import { EraChampionSidebar } from './EraChampionSidebar'
 import styles from './StartScreen.module.css'
 
 export interface StartScreenProps {
   eras: readonly EraConfig[]
-  onSelectEra: (era: EraId) => void
-  onSelectDifficulty: (difficulty: Difficulty) => void
+  onStartChallenge: (era: EraId) => void
   muted: boolean
   onToggleMute: () => void
   defaultEra?: EraId
-  defaultDifficulty?: Difficulty
+}
+
+function formatEraStatus(eraId: EraId): string {
+  const record = getEraChallengeRecord(eraId)
+  if (record.totalClears > 0 && record.bestClearAttempts !== null) {
+    return ` · Cleared in ${record.bestClearAttempts}`
+  }
+  if (record.attemptsSinceClear > 0) {
+    return ` · Attempt ${record.attemptsSinceClear}`
+  }
+  return ''
 }
 
 export function StartScreen({
   eras,
-  onSelectEra,
-  onSelectDifficulty,
+  onStartChallenge,
   muted,
   onToggleMute,
   defaultEra,
-  defaultDifficulty,
 }: StartScreenProps) {
   const [selectedEra, setSelectedEra] = useState<EraId>(
     defaultEra ?? eras[0]?.id ?? '2000s',
   )
-  const [difficulty, setDifficulty] = useState<Difficulty>(defaultDifficulty ?? 'normal')
   const eraConfig = getEraConfig(selectedEra)
-  const eraProgress = useMemo(() => getEraProgressStats(selectedEra), [selectedEra])
-  const savedRun = useMemo(() => loadSavedRun(), [])
-  const canContinue =
-    !eraProgress.complete &&
-    (eraProgress.defeated > 0 || savedRun?.era === selectedEra)
+  const eraRecord = useMemo(() => getEraChallengeRecord(selectedEra), [selectedEra])
 
   useEffect(() => {
     if (defaultEra) {
       setSelectedEra(defaultEra)
     }
   }, [defaultEra])
-
-  useEffect(() => {
-    if (defaultDifficulty) {
-      setDifficulty(defaultDifficulty)
-    }
-  }, [defaultDifficulty])
-
-  const handleDifficultyChange = (value: Difficulty) => {
-    setDifficulty(value)
-    trackButtonClick(AnalyticsEvent.SELECT_DIFFICULTY, { difficulty: value })
-    onSelectDifficulty(value)
-  }
 
   const handleEraChange = (value: EraId) => {
     setSelectedEra(value)
@@ -74,12 +62,12 @@ export function StartScreen({
           <RulesDialog triggerLabel="Rules" title="How to Play">
             <ul className={styles.rulesList}>
               <li>
-                Face every NBA champion in your era, year by year — 2000 through 2009, 2010 through
-                2019, or 2020 onward.
+                Pick an era, draw one random NBA champion, draft your starting five, and win Game 7
+                to clear the challenge.
               </li>
               <li>
-                Draft your starting five in five rounds: PG → SG → SF → PF → C. Each position starts
-                with {DRAFT_OFFERS_PER_SLOT} hidden-contract offers.
+                Draft in five rounds: PG → SG → SF → PF → C. Each position starts with{' '}
+                {DRAFT_OFFERS_PER_SLOT} hidden-contract offers.
               </li>
               <li>
                 Hit to discard the current card, Sign to flip the contract, then Next Position to
@@ -88,7 +76,7 @@ export function StartScreen({
               </li>
               <li>
                 Go over the cap for a soft bust (−20 rating, plus more the further you exceed it).
-                Exact score ties are a push.
+                Exact score ties are a push — try again with a fresh draft and a new opponent.
               </li>
             </ul>
           </RulesDialog>
@@ -107,38 +95,32 @@ export function StartScreen({
         <div className={styles.intro}>
           <p className={styles.kicker}>Choose Your Era</p>
           <p className={styles.description}>{eraConfig.description}</p>
+          <p className={styles.description}>
+            Beat one randomly drawn champion in Game 7 to clear the era. Lose or tie and you start
+            over with a new draft and opponent.
+          </p>
         </div>
 
         <SegmentedControl
           value={selectedEra}
-          options={eras.map((era) => {
-            const progress = getEraProgressStats(era.id)
-            const progressLabel =
-              progress.defeated > 0 ? ` · ${progress.defeated}/${progress.total}` : ''
-            return {
-              value: era.id,
-              label: `${era.label}${progressLabel}`,
-            }
-          })}
+          options={eras.map((era) => ({
+            value: era.id,
+            label: `${era.label}${formatEraStatus(era.id)}`,
+          }))}
           onValueChange={handleEraChange}
           ariaLabel="Select era"
         />
 
-        <SegmentedControl
-          value={difficulty}
-          options={[
-            { value: 'normal', label: 'Normal' },
-            { value: 'hard', label: 'Hard' },
-          ]}
-          onValueChange={handleDifficultyChange}
-          ariaLabel="Select difficulty"
-        />
-
-        {canContinue ? (
+        {eraRecord.totalClears > 0 ? (
           <p className={styles.resumeHint}>
-            {eraProgress.defeated > 0
-              ? `${eraProgress.defeated}/${eraProgress.total} champions defeated — pick up where you left off.`
-              : 'Resume your run in progress.'}
+            Cleared {eraRecord.totalClears} time{eraRecord.totalClears === 1 ? '' : 's'}
+            {eraRecord.bestClearAttempts !== null
+              ? ` · Best: ${eraRecord.bestClearAttempts} attempts`
+              : ''}
+          </p>
+        ) : eraRecord.attemptsSinceClear > 0 ? (
+          <p className={styles.resumeHint}>
+            In progress — attempt {eraRecord.attemptsSinceClear} since your last clear.
           </p>
         ) : null}
 
@@ -149,17 +131,13 @@ export function StartScreen({
           onClick={() => {
             trackButtonClick(AnalyticsEvent.CLICK_ENTER_DRAFT, {
               era: selectedEra,
-              difficulty,
-              continue_run: canContinue,
             })
-            onSelectEra(selectedEra)
+            onStartChallenge(selectedEra)
           }}
         >
-          {canContinue ? 'Continue Run' : 'Enter the Draft'}
+          Start Challenge
         </Button>
       </section>
-
-      <EraChampionSidebar key={selectedEra} eraId={selectedEra} />
     </div>
   )
 }

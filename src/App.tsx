@@ -1,6 +1,5 @@
 import type { EraId, SessionRecord } from './types/game'
-import { EraChampionSidebar } from './components/EraChampionSidebar'
-import { EraCompleteScreen } from './components/EraCompleteScreen'
+import { ChallengeClearScreen } from './components/EraCompleteScreen'
 import { OpponentReveal } from './components/OpponentReveal'
 import { DraftPhase } from './components/DraftPhase'
 import { ResultScreen } from './components/ResultScreen'
@@ -12,25 +11,25 @@ import { useGameState } from './hooks/useGameState'
 import { getDraftCapSpend, getFinalStarters } from './lib/draft'
 import { AnalyticsEvent, trackButtonClick } from './lib/analytics'
 import { Button } from './ui/Button'
+import { CHALLENGE_DIFFICULTY } from './types/game'
 
 function GameplayLayout({
   eraId,
-  defeatedIds,
+  attemptNumber,
   session,
   children,
 }: {
   eraId: EraId
-  defeatedIds: readonly string[]
+  attemptNumber: number
   session: SessionRecord
   children: React.ReactNode
 }) {
   return (
     <div className="gameLayout">
       <div className="gameLayout__main">
-        <RunProgressHeader eraId={eraId} defeatedIds={defeatedIds} session={session} />
+        <RunProgressHeader eraId={eraId} attemptNumber={attemptNumber} session={session} />
         {children}
       </div>
-      <EraChampionSidebar eraId={eraId} defeatedIds={defeatedIds} compact />
     </div>
   )
 }
@@ -55,7 +54,7 @@ export default function App() {
       game.screen === 'draft' ||
       game.screen === 'sim' ||
       game.screen === 'result' ||
-      game.screen === 'eraComplete')
+      game.screen === 'challengeClear')
 
   return (
     <div className="app">
@@ -72,7 +71,7 @@ export default function App() {
             >
               Home
             </Button>
-            {game.era !== null && game.screen !== 'result' && game.screen !== 'eraComplete' ? (
+            {game.era !== null && game.screen !== 'result' && game.screen !== 'challengeClear' ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -81,7 +80,7 @@ export default function App() {
                     era: game.era ?? undefined,
                     screen: game.screen,
                   })
-                  game.onNextHand()
+                  game.onTryAgain()
                 }}
               >
                 Restart
@@ -125,25 +124,24 @@ export default function App() {
         {!game.loading && !game.error && game.screen === 'start' ? (
           <StartScreen
             eras={SELECTABLE_ERAS}
-            onSelectEra={game.onSelectEra}
-            onSelectDifficulty={game.onSelectDifficulty}
+            onStartChallenge={game.onStartChallenge}
             muted={game.muted}
             onToggleMute={game.onToggleMute}
             defaultEra={game.lastEra}
-            defaultDifficulty={game.lastDifficulty}
           />
         ) : null}
 
         {!game.loading && !game.error && showGameplayChrome && game.era ? (
           <GameplayLayout
             eraId={game.era}
-            defeatedIds={game.defeatedChampionIds}
+            attemptNumber={game.attemptNumber}
             session={game.session}
           >
             {game.screen === 'champion' && game.champion ? (
               <OpponentReveal
                 champion={game.champion}
                 era={game.era}
+                attemptNumber={game.attemptNumber}
                 onStartDraft={game.onStartDraft}
               />
             ) : null}
@@ -152,7 +150,7 @@ export default function App() {
               <DraftPhase
                 state={game.draft}
                 era={getEraConfig(game.era)}
-                difficulty={game.difficulty}
+                difficulty={CHALLENGE_DIFFICULTY}
                 onSign={game.onSign}
                 onNextPosition={game.onNextPosition}
                 onStartSim={game.onStartSim}
@@ -180,17 +178,18 @@ export default function App() {
                 roster={simRoster}
                 capSpend={simCapSpend}
                 capLimit={simCapLimit}
-                seed={game.seed}
-                defeatedIds={game.defeatedChampionIds}
+                attemptNumber={game.attemptNumber}
                 badgeCounts={game.persistentProgress.badgeCounts}
-                championAttempts={game.championAttempts}
-                onNextHand={game.onNextHand}
+                onTryAgain={game.onTryAgain}
                 onPlayAgain={game.onPlayAgain}
               />
             ) : null}
 
-            {game.screen === 'eraComplete' && game.simResult && game.champion ? (
-              <EraCompleteScreen
+            {game.screen === 'challengeClear' &&
+            game.simResult &&
+            game.champion &&
+            game.clearAttempts !== null ? (
+              <ChallengeClearScreen
                 era={game.era}
                 session={game.session}
                 result={game.simResult}
@@ -198,6 +197,8 @@ export default function App() {
                 roster={simRoster}
                 capSpend={simCapSpend}
                 capLimit={simCapLimit}
+                clearAttempts={game.clearAttempts}
+                clearIsBest={game.clearIsBest}
                 badgesEarned={game.badges}
                 badgeCounts={game.persistentProgress.badgeCounts}
                 onRunItBack={game.onRunItBack}
