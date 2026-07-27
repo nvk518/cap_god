@@ -237,9 +237,9 @@ describe('hit penalties', () => {
 
   it('includes hit penalties in cap spend checks', () => {
     const roster = [makePlayer({ id: 'a', salary: 48_000_000, rating: 90 }, ['PG'])]
-    expect(isOverCap(roster, '2000s', 50_000_000, 0)).toBe(false)
-    expect(isOverCap(roster, '2000s', 50_000_000, 2_000_000)).toBe(false)
-    expect(isOverCap(roster, '2000s', 50_000_000, 2_000_001)).toBe(true)
+    expect(isOverCap(roster, '2000s', 45_000_000, 0)).toBe(false)
+    expect(isOverCap(roster, '2000s', 45_000_000, 2_000_000)).toBe(false)
+    expect(isOverCap(roster, '2000s', 45_000_000, 2_000_001)).toBe(true)
     expect(getDraftCapSpend(roster, '2000s', 2_000_000)).toBe(50_000_000)
   })
 })

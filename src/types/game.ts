@@ -147,7 +147,7 @@ export const TIME_MACHINE_CAP_POINTS = 100
 export const TIME_MACHINE_MIN_CAP_POINTS = 3
 
 export const PLAYER_ERA_CAPS: Record<PlayerEra, number> = {
-  '2000s': 50_000_000,
+  '2000s': 45_000_000,
   '2010s': 65_000_000,
   '2020s': 100_000_000,
 }

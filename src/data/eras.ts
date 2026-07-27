@@ -27,7 +27,7 @@ const ERA_CONFIGS: Record<EraId, EraConfig> = {
     id: '2000s',
     label: '2000s',
     cap: PLAYER_ERA_CAPS['2000s'],
-    description: 'Shaq, Kobe, and the hand-check era. Draft under a $50M cap.',
+    description: 'Shaq, Kobe, and the hand-check era. Draft under a $45M cap.',
     balance: { ...CHALLENGE_BALANCE, cap: PLAYER_ERA_CAPS['2000s'] },
   },
   '2010s': {
