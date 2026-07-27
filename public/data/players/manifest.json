@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.1.0",
+  "generatedAt": "2026-07-26T08:48:10.345821+00:00",
+  "sourceFile": "NBA Player Stats and Salaries_2000-2025.csv",
+  "totalPlayers": 4989,
+  "minMinutesPlayed": 15.0,
+  "eras": {
+    "2000s": {
+      "file": "2000s.json",
+      "count": 1738,
+      "salaryMin": 63127,
+      "salaryMax": 29464000,
+      "checksumSha256": "4bbb436f2396964628bd8bf3e21f92a82beff8c8816cb497223766d9480bab63"
+    },
+    "2010s": {
+      "file": "2010s.json",
+      "count": 2084,
+      "salaryMin": 13824,
+      "salaryMax": 40231758,
+      "checksumSha256": "0cd52734f83ec290c7058620d9c49f5c54ec9f02a4c10d580fd1d0c0636ffc78"
+    },
+    "2020s": {
+      "file": "2020s.json",
+      "count": 1167,
+      "salaryMin": 6201,
+      "salaryMax": 55761216,
+      "checksumSha256": "72493d52230640cdbe937caffbb2200546c32bef737408940ebe554c3a341c8a"
+    }
+  },
+  "positionsFile": "season_positions.json",
+  "positionsChecksumSha256": "4b18f162eff627fecd5ae7d2f03ea885987ca9f16ec7b6b7c69055e41bcd439e",
+  "minRating": 74
+}

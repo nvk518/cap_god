@@ -1,0 +1,216 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  width: min(100%, 28rem);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  text-align: center;
+}
+
+.kicker {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+}
+
+.matchup {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  color: var(--color-off-white);
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-charcoal-border);
+  background: linear-gradient(
+    180deg,
+    rgba(26, 61, 42, 0.35) 0%,
+    var(--color-charcoal-raised) 100%
+  );
+  box-shadow: var(--shadow-card);
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.teamChampion {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.teamLabel {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.teamScore {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 10vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-amber-bright);
+  transition: color var(--motion-fast);
+}
+
+.clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.quarter {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-off-white);
+}
+
+.vs {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.quarterTrack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quarterDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-charcoal-border);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  background: rgba(0, 0, 0, 0.2);
+  transition:
+    background-color var(--motion-medium),
+    border-color var(--motion-medium),
+    color var(--motion-medium);
+}
+
+.quarterDotActive {
+  border-color: var(--color-hardwood-tan);
+  color: var(--color-off-white);
+}
+
+.quarterDotCurrent {
+  background: var(--color-hardwood);
+  border-color: var(--color-amber-dim);
+  color: var(--color-amber-bright);
+}
+
+.highlightList {
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-charcoal-border);
+  background: rgba(0, 0, 0, 0.2);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.highlightItem {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.highlightItem::before {
+  content: '▸ ';
+  color: var(--color-amber-dim);
+}
+
+.commentary {
+  margin: 0;
+  min-height: 3.5rem;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-charcoal-border);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-off-white);
+}
+
+.eventCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.eventHeadline {
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-charcoal-border);
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-off-white);
+}
+
+.eventEmphasis {
+  border-color: var(--color-amber-dim);
+  color: var(--color-amber-bright);
+}
+
+.scorePulse {
+  color: var(--color-success);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teamScore {
+    transition: none;
+  }
+
+  .quarterDot {
+    transition: none;
+  }
+}

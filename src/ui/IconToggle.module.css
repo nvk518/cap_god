@@ -1,0 +1,51 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-charcoal-border);
+  border-radius: var(--radius-md);
+  background: var(--color-charcoal-raised);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+
+.toggle:hover:not(:disabled) {
+  color: var(--color-off-white);
+  border-color: var(--color-hardwood-tan);
+}
+
+.togglePressed {
+  background: var(--color-hardwood);
+  border-color: var(--color-amber-dim);
+  color: var(--color-amber-bright);
+}
+
+.toggleDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

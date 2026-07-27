@@ -1,0 +1,139 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: min(100%, 24rem);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.forcedBanner {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-amber-dim);
+  background: rgba(245, 166, 35, 0.12);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-amber-bright);
+}
+
+.cardArea {
+  min-height: 16rem;
+}
+
+.cardAreaCompact {
+  min-height: unset;
+}
+
+.completeMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 16rem;
+  margin: 0;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-charcoal-border);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.actionsSingle {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.rosterSlot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-charcoal-border);
+  background: rgba(255, 255, 255, 0.02);
+  min-height: 3.5rem;
+}
+
+.rosterSlotActive {
+  border-color: var(--color-amber-dim);
+  background: rgba(245, 166, 35, 0.08);
+}
+
+.rosterSlotLabel {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.rosterSlotName {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rosterSlotMeta {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--color-muted);
+}
+
+.rosterSlotEmpty {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--color-muted);
+}
+
+.overCapBanner {
+  border-color: var(--color-red-dim, #c44);
+  background: rgba(220, 68, 68, 0.12);
+  color: var(--color-red-bright, #f87171);
+}
+
+.projectedSpend {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}

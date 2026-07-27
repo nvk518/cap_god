@@ -1,0 +1,59 @@
+:root {
+  --color-charcoal: #141210;
+  --color-charcoal-raised: #1c1916;
+  --color-charcoal-border: #2a2622;
+  --color-hardwood: #3d2817;
+  --color-hardwood-tan: #6b4c34;
+  --color-court-deep: #0d2818;
+  --color-court-mid: #1a3d2a;
+  --color-court-light: #2d5a3d;
+
+  --color-amber: #f5a623;
+  --color-amber-bright: #ffc857;
+  --color-amber-dim: #c4841a;
+
+  --color-off-white: #f0ebe3;
+  --color-muted: #8a8078;
+  --color-ink: #0a0a09;
+
+  --color-success: #3ecf8e;
+  --color-warning: #f5a623;
+  --color-danger: #e74c3c;
+
+  --color-cap-safe: var(--color-success);
+  --color-cap-warn: var(--color-warning);
+  --color-cap-danger: var(--color-danger);
+
+  --font-display: 'Bebas Neue', 'Impact', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow-amber: 0 0 20px rgba(245, 166, 35, 0.2);
+  --shadow-keyline: inset 0 0 0 1px var(--color-charcoal-border);
+
+  --motion-fast: 120ms ease;
+  --motion-medium: 220ms ease;
+  --motion-slow: 360ms ease;
+
+  --target-min: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-medium: 0ms;
+    --motion-slow: 0ms;
+  }
+}

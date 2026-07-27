@@ -1,0 +1,49 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: 0;
+  border: 1px solid var(--color-charcoal-border);
+  border-radius: 50%;
+  background: var(--color-charcoal-raised);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: help;
+  transition:
+    color var(--motion-fast),
+    border-color var(--motion-fast),
+    background-color var(--motion-fast);
+}
+
+.trigger:hover,
+.triggerOpen {
+  color: var(--color-amber-bright);
+  border-color: var(--color-amber-dim);
+}
+
+.popup {
+  z-index: 50;
+  max-width: 16rem;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-charcoal-border);
+  border-radius: var(--radius-md);
+  background: var(--color-charcoal-raised);
+  color: var(--color-off-white);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  box-shadow: var(--shadow-card);
+}
+
+.positioner {
+  z-index: 50;
+}
+
+.arrow {
+  fill: var(--color-charcoal-raised);
+  stroke: var(--color-charcoal-border);
+}
