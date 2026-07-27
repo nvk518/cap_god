@@ -6,7 +6,7 @@ import {
   formatShareOutcomeLetter,
   formatShareResult,
   formatShortSeason,
-  getShareOrigin,
+  SHARE_URL,
 } from './shareResult'
 
 const champion: ChampionTeam = {
@@ -99,21 +99,8 @@ describe('formatShareCapLine', () => {
   })
 })
 
-describe('getShareOrigin', () => {
-  it('omits the origin on local hosts', () => {
-    expect(getShareOrigin('localhost')).toBeNull()
-    expect(getShareOrigin('127.0.0.1')).toBeNull()
-    expect(getShareOrigin('capgod.test')).toBeNull()
-  })
-
-  it('returns the production origin elsewhere', () => {
-    expect(getShareOrigin('capgod.app')).toBe('capgod.app')
-    expect(getShareOrigin()).toBe('capgod.app')
-  })
-})
-
 describe('formatShareResult', () => {
-  it('formats a winning share card with roster order and shortened seasons', () => {
+  it('formats a winning share card with the game link, roster order, and shortened seasons', () => {
     const text = formatShareResult({
       result: winResult,
       champion,
@@ -122,12 +109,11 @@ describe('formatShareResult', () => {
       capSpend: 68_400_000,
       capLimit: 65_000_000,
       attemptNumber: 4,
-      host: 'capgod.app',
     })
 
     expect(text).toBe(
       [
-        'CAP GOD 🏆',
+        SHARE_URL,
         "W 112–108 vs '17 Warriors",
         'Attempt #4',
         'CAP $68.4M/$65M',
@@ -136,12 +122,11 @@ describe('formatShareResult', () => {
         "SF LeBron James '13",
         "PF Kevin Garnett '04",
         "C Shaquille O'Neal '00",
-        'capgod.app',
       ].join('\n'),
     )
   })
 
-  it('formats losses without the trophy and with a tie marker', () => {
+  it('formats losses and ties without a trophy line', () => {
     const lossText = formatShareResult({
       result: { ...winResult, outcome: 'loss', won: false, userScore: 100, championScore: 105 },
       champion,
@@ -150,12 +135,12 @@ describe('formatShareResult', () => {
       capSpend: 68_400_000,
       capLimit: 65_000_000,
       attemptNumber: 7,
-      host: 'capgod.app',
     })
 
-    expect(lossText.startsWith('CAP GOD\nL 100–105')).toBe(true)
+    expect(lossText.startsWith(`${SHARE_URL}\nL 100–105`)).toBe(true)
     expect(lossText.includes('Attempt #7')).toBe(true)
     expect(lossText.includes('🏆')).toBe(false)
+    expect(lossText.includes('CAP GOD')).toBe(false)
 
     const tieText = formatShareResult({
       result: {
@@ -171,13 +156,12 @@ describe('formatShareResult', () => {
       capSpend: 68_400_000,
       capLimit: 65_000_000,
       attemptNumber: 2,
-      host: 'capgod.app',
     })
 
     expect(tieText.includes('T 105–105')).toBe(true)
   })
 
-  it('omits the origin line on localhost', () => {
+  it('does not append a trailing origin line', () => {
     const text = formatShareResult({
       result: winResult,
       champion,
@@ -186,10 +170,9 @@ describe('formatShareResult', () => {
       capSpend: 68_400_000,
       capLimit: 65_000_000,
       attemptNumber: 1,
-      host: 'localhost',
     })
 
-    expect(text.endsWith('capgod.app')).toBe(false)
+    expect(text.startsWith(SHARE_URL)).toBe(true)
     expect(text.split('\n').at(-1)).toBe("C Shaquille O'Neal '00")
   })
 })

@@ -11,11 +11,9 @@ export interface ShareResultInput {
   capSpend: number
   capLimit: number
   attemptNumber: number
-  host?: string
 }
 
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
-const SHARE_ORIGIN = 'capgod.app'
+export const SHARE_URL = 'https://nvk518.github.io/cap_god/'
 
 function formatShareMillions(dollars: number): string {
   return formatMillions(dollars).replace(/\.0M$/, 'M')
@@ -46,21 +44,8 @@ export function formatShareCapLine(spend: number, capLimit: number, era: EraId):
   return `CAP ${formatShareMillions(spend)}/${formatShareMillions(capLimit)}`
 }
 
-export function getShareOrigin(host?: string): string | null {
-  const hostname = host?.trim().toLowerCase() ?? ''
-  if (!hostname) {
-    return SHARE_ORIGIN
-  }
-  if (LOCAL_HOSTS.has(hostname) || hostname.endsWith('.local') || hostname.endsWith('.test')) {
-    return null
-  }
-  return SHARE_ORIGIN
-}
-
 export function formatShareResult(input: ShareResultInput): string {
-  const lines: string[] = []
-
-  lines.push(input.result.outcome === 'win' ? 'CAP GOD 🏆' : 'CAP GOD')
+  const lines: string[] = [SHARE_URL]
 
   const outcome = formatShareOutcomeLetter(input.result.outcome)
   lines.push(
@@ -78,11 +63,6 @@ export function formatShareResult(input: ShareResultInput): string {
       continue
     }
     lines.push(`${slot} ${player.player} ${formatShortSeason(player.year)}`)
-  }
-
-  const origin = getShareOrigin(input.host)
-  if (origin) {
-    lines.push(origin)
   }
 
   return lines.join('\n')
