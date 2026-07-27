@@ -1,6 +1,7 @@
 import { getChampionsByEraOrdered } from '../data/champions'
 import { getEraConfig } from '../data/eras'
 import { ALL_BADGE_IDS, badgeLabel } from '../lib/badges'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { Player } from '../schemas/player'
 import type { BadgeId, ChampionTeam, EraId, SessionRecord, SimResult } from '../types/game'
 import { Button } from '../ui/Button'
@@ -87,10 +88,25 @@ export function EraCompleteScreen({
           capSpend={capSpend}
           capLimit={capLimit}
         />
-        <Button variant="primary" fullWidth size="lg" onClick={onRunItBack}>
+        <Button
+          variant="primary"
+          fullWidth
+          size="lg"
+          onClick={() => {
+            trackButtonClick(AnalyticsEvent.CLICK_RUN_IT_BACK, { era })
+            onRunItBack()
+          }}
+        >
           Run It Back
         </Button>
-        <Button variant="secondary" fullWidth onClick={onChangeEra}>
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => {
+            trackButtonClick(AnalyticsEvent.CLICK_CHANGE_ERA, { era })
+            onChangeEra()
+          }}
+        >
           Change Era
         </Button>
       </div>

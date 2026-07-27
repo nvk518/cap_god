@@ -13,6 +13,7 @@ import {
   isOverCap,
 } from '../lib/draft'
 import { formatCapSpend } from '../lib/format'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import { Button } from '../ui/Button'
 import type { Difficulty, DraftState, EraConfig, LineupSlot } from '../types/game'
 import { DRAFT_OFFERS_PER_SLOT, LINEUP_SLOTS } from '../types/game'
@@ -156,20 +157,70 @@ export function DraftPhase({
 
       <div className={draftComplete || flipped ? styles.actionsSingle : styles.actions}>
         {draftComplete ? (
-          <Button variant="primary" fullWidth onClick={onStartSim}>
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => {
+              trackButtonClick(AnalyticsEvent.CLICK_START_GAME_7, {
+                era: era.id,
+                cap_spend: rosterSpend,
+                cap_limit: era.cap,
+                over_cap: overCap,
+              })
+              onStartSim()
+            }}
+          >
             Start Game 7
           </Button>
         ) : !flipped ? (
           <>
-            <Button variant="danger" fullWidth disabled={!canHit(state)} onClick={onHit}>
+            <Button
+              variant="danger"
+              fullWidth
+              disabled={!canHit(state)}
+              onClick={() => {
+                trackButtonClick(AnalyticsEvent.CLICK_HIT, {
+                  era: era.id,
+                  slot: state.activeSlot,
+                  offer_index: state.offerIndex,
+                })
+                onHit()
+              }}
+            >
               Hit
             </Button>
-            <Button variant="success" fullWidth disabled={!canFlip(state)} onClick={onSign}>
+            <Button
+              variant="success"
+              fullWidth
+              disabled={!canFlip(state)}
+              onClick={() => {
+                trackButtonClick(AnalyticsEvent.CLICK_TAKE, {
+                  era: era.id,
+                  slot: state.activeSlot,
+                  offer_index: state.offerIndex,
+                })
+                onSign()
+              }}
+            >
               Sign
             </Button>
           </>
         ) : (
-          <Button variant="primary" fullWidth disabled={!canAdvance(state)} onClick={onNextPosition}>
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={!canAdvance(state)}
+            onClick={() => {
+              trackButtonClick(AnalyticsEvent.CLICK_NEXT_POSITION, {
+                era: era.id,
+                slot: state.activeSlot,
+                offer_index: state.offerIndex,
+                salary_revealed: state.salaryRevealed,
+                forced: state.forcedSign,
+              })
+              onNextPosition()
+            }}
+          >
             Next Position
           </Button>
         )}

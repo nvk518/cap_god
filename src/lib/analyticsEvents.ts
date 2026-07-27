@@ -1,0 +1,28 @@
+export const AnalyticsEvent = {
+  CLICK_HOME: 'click_home',
+  CLICK_RESTART: 'click_restart',
+  CLICK_RETRY: 'click_retry',
+  CLICK_RULES: 'click_rules',
+  CLICK_RULES_CLOSE: 'click_rules_close',
+  CLICK_MUTE_TOGGLE: 'click_mute_toggle',
+  SELECT_ERA: 'select_era',
+  SELECT_DIFFICULTY: 'select_difficulty',
+  CLICK_ENTER_DRAFT: 'click_enter_draft',
+  CLICK_START_DRAFT: 'click_start_draft',
+  CLICK_HIT: 'click_hit',
+  CLICK_TAKE: 'click_take',
+  CLICK_NEXT_POSITION: 'click_next_position',
+  CLICK_START_GAME_7: 'click_start_game_7',
+  CLICK_SIM_ADVANCE: 'click_sim_advance',
+  CLICK_SKIP_TO_RESULT: 'click_skip_to_result',
+  CLICK_SHARE_RESULT: 'click_share_result',
+  CLICK_NEXT_HAND: 'click_next_hand',
+  CLICK_CHANGE_ERA: 'click_change_era',
+  CLICK_TOGGLE_STATS_EXPORT: 'click_toggle_stats_export',
+  CLICK_EXPORT_LOGS_JSON: 'click_export_logs_json',
+  CLICK_EXPORT_LOGS_CSV: 'click_export_logs_csv',
+  CLICK_CLEAR_LOGS: 'click_clear_logs',
+  CLICK_RUN_IT_BACK: 'click_run_it_back',
+} as const
+
+export type AnalyticsEventName = (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent]

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getEraConfig } from '../data/eras'
 import { getEraProgressStats } from '../lib/eraProgress'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import { loadSavedRun } from '../lib/savedRun'
 import { Button, IconToggle, RulesDialog, SegmentedControl } from '../ui'
 import type { Difficulty, EraConfig, EraId } from '../types/game'
@@ -52,7 +53,13 @@ export function StartScreen({
 
   const handleDifficultyChange = (value: Difficulty) => {
     setDifficulty(value)
+    trackButtonClick(AnalyticsEvent.SELECT_DIFFICULTY, { difficulty: value })
     onSelectDifficulty(value)
+  }
+
+  const handleEraChange = (value: EraId) => {
+    setSelectedEra(value)
+    trackButtonClick(AnalyticsEvent.SELECT_ERA, { era: value })
   }
 
   return (
@@ -87,7 +94,10 @@ export function StartScreen({
           </RulesDialog>
           <IconToggle
             pressed={muted}
-            onPressedChange={() => onToggleMute()}
+            onPressedChange={() => {
+              trackButtonClick(AnalyticsEvent.CLICK_MUTE_TOGGLE, { muted: !muted })
+              onToggleMute()
+            }}
             label={muted ? 'Unmute sound' : 'Mute sound'}
           >
             {muted ? '🔇' : '🔊'}
@@ -110,7 +120,7 @@ export function StartScreen({
               label: `${era.label}${progressLabel}`,
             }
           })}
-          onValueChange={setSelectedEra}
+          onValueChange={handleEraChange}
           ariaLabel="Select era"
         />
 
@@ -136,7 +146,14 @@ export function StartScreen({
           variant="primary"
           fullWidth
           size="lg"
-          onClick={() => onSelectEra(selectedEra)}
+          onClick={() => {
+            trackButtonClick(AnalyticsEvent.CLICK_ENTER_DRAFT, {
+              era: selectedEra,
+              difficulty,
+              continue_run: canContinue,
+            })
+            onSelectEra(selectedEra)
+          }}
         >
           {canContinue ? 'Continue Run' : 'Enter the Draft'}
         </Button>

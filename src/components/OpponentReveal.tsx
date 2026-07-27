@@ -1,4 +1,5 @@
 import { getEraConfig } from '../data/eras'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import { Button } from '../ui/Button'
 import type { ChampionTeam, EraId } from '../types/game'
 import styles from './OpponentReveal.module.css'
@@ -40,7 +41,18 @@ export function OpponentReveal({ champion, era, onStartDraft }: OpponentRevealPr
         </p>
       </div>
 
-      <Button variant="primary" fullWidth size="lg" onClick={onStartDraft}>
+      <Button
+        variant="primary"
+        fullWidth
+        size="lg"
+        onClick={() => {
+          trackButtonClick(AnalyticsEvent.CLICK_START_DRAFT, {
+            era,
+            champion_id: champion.id,
+          })
+          onStartDraft()
+        }}
+      >
         Start Draft
       </Button>
     </section>

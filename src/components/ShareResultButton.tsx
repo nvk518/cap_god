@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { trackEvent } from '../lib/analytics'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { Player } from '../schemas/player'
 import { deliverShareText, formatShareResult } from '../lib/shareResult'
 import type { ChampionTeam, EraId, SimResult } from '../types/game'
@@ -13,6 +13,7 @@ export interface ShareResultButtonProps {
   era: EraId
   capSpend: number
   capLimit: number
+  size?: 'sm' | 'md' | 'lg' | undefined
 }
 
 type ShareFeedback = 'shared' | 'copied' | null
@@ -24,6 +25,7 @@ export function ShareResultButton({
   era,
   capSpend,
   capLimit,
+  size,
 }: ShareResultButtonProps) {
   const [feedback, setFeedback] = useState<ShareFeedback>(null)
   const [error, setError] = useState<string | null>(null)
@@ -55,6 +57,10 @@ export function ShareResultButton({
   const handleShare = async (): Promise<void> => {
     clearResetTimer()
     setError(null)
+    trackButtonClick(AnalyticsEvent.CLICK_SHARE_RESULT, {
+      era,
+      outcome: result.outcome,
+    })
 
     const text = formatShareResult({
       result,
@@ -67,11 +73,6 @@ export function ShareResultButton({
 
     try {
       const delivery = await deliverShareText(text)
-      trackEvent('share_result', {
-        era,
-        outcome: result.outcome,
-        method: delivery,
-      })
       setFeedback(delivery)
       scheduleFeedbackReset()
     } catch (shareError) {
@@ -92,12 +93,14 @@ export function ShareResultButton({
 
   return (
     <div className={styles.root}>
-      <Button variant="secondary" fullWidth onClick={() => void handleShare()}>
-        Share Result
+      <Button variant="secondary" size={size} fullWidth onClick={() => void handleShare()}>
+        Share
       </Button>
-      <p className={styles.status} role="status" aria-live="polite">
-        {statusMessage}
-      </p>
+      {statusMessage ? (
+        <p className={styles.status} role="status" aria-live="polite">
+          {statusMessage}
+        </p>
+      ) : null}
     </div>
   )
 }

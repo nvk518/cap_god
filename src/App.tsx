@@ -10,6 +10,7 @@ import { StartScreen } from './components/StartScreen'
 import { getEraConfig, SELECTABLE_ERAS } from './data/eras'
 import { useGameState } from './hooks/useGameState'
 import { getDraftCapSpend, getFinalStarters } from './lib/draft'
+import { AnalyticsEvent, trackButtonClick } from './lib/analytics'
 import { Button } from './ui/Button'
 
 function GameplayLayout({
@@ -61,11 +62,28 @@ export default function App() {
       {showNav ? (
         <header className="app__header">
           <div className="app__headerActions">
-            <Button variant="ghost" size="sm" onClick={game.onPlayAgain}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                trackButtonClick(AnalyticsEvent.CLICK_HOME, { era: game.era ?? undefined })
+                game.onPlayAgain()
+              }}
+            >
               Home
             </Button>
             {game.era !== null && game.screen !== 'result' && game.screen !== 'eraComplete' ? (
-              <Button variant="ghost" size="sm" onClick={game.onNextHand}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  trackButtonClick(AnalyticsEvent.CLICK_RESTART, {
+                    era: game.era ?? undefined,
+                    screen: game.screen,
+                  })
+                  game.onNextHand()
+                }}
+              >
                 Restart
               </Button>
             ) : null}
@@ -91,7 +109,14 @@ export default function App() {
         {!game.loading && game.error ? (
           <div className="app__placeholder" role="alert">
             <p>{game.error}</p>
-            <Button variant="primary" fullWidth onClick={game.onRetryLoad}>
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={() => {
+                trackButtonClick(AnalyticsEvent.CLICK_RETRY, { era: game.lastEra })
+                game.onRetryLoad()
+              }}
+            >
               Retry
             </Button>
           </div>

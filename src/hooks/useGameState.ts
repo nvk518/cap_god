@@ -237,13 +237,11 @@ export function useGameState(): UseGameStateResult {
     if (saved) {
       saveSavedRun({ ...saved, difficulty })
     }
-    trackEvent('difficulty_change', { difficulty })
     setState((current) => ({ ...current, difficulty }))
   }, [])
 
   const onRetryLoad = useCallback(() => {
     const era = pendingEraRef.current ?? lastEra
-    trackEvent('retry_load', { era })
     void beginEraLoad(era, lastDifficulty)
   }, [beginEraLoad, lastDifficulty, lastEra])
 
@@ -259,27 +257,18 @@ export function useGameState(): UseGameStateResult {
 
     setPositionDecisions(createEmptyPositionDecisions())
     decisionsRef.current = createEmptyPositionDecisions()
-    trackEvent('draft_start', {
-      era: state.era,
-      champion_id: state.champion?.id,
-    })
     setState((current) => ({
       ...current,
       screen: 'draft',
       draft,
     }))
-  }, [pool, state.champion?.id, state.era])
+  }, [pool, state.era])
 
   const onSign = useCallback(() => {
     setState((current) => {
       if (!current.draft || !canFlip(current.draft)) {
         return current
       }
-      trackEvent('draft_sign', {
-        era: current.era ?? undefined,
-        slot: current.draft.activeSlot,
-        offer_index: current.draft.offerIndex,
-      })
       return {
         ...current,
         draft: revealSalary(current.draft),
@@ -304,13 +293,6 @@ export function useGameState(): UseGameStateResult {
       }
 
       const offer = draft.currentOffer!
-      trackEvent('draft_lock_player', {
-        era: current.era,
-        slot: draft.activeSlot,
-        offer_index: draft.offerIndex,
-        salary_revealed: draft.salaryRevealed,
-        forced: draft.forcedSign,
-      })
       trackDecision({
         slot: draft.activeSlot,
         offerIndex: draft.offerIndex,
@@ -358,16 +340,6 @@ export function useGameState(): UseGameStateResult {
         hitPenaltySpend: current.draft.hitPenaltySpend,
         rng,
       })
-      const capSpend = getDraftCapSpend(starters, current.era, current.draft.hitPenaltySpend)
-
-      trackEvent('sim_start', {
-        era: current.era,
-        difficulty: current.difficulty,
-        champion_id: current.champion.id,
-        cap_spend: capSpend,
-        cap_limit: eraConfig.cap,
-        hit_penalty_spend: current.draft.hitPenaltySpend,
-      })
 
       return {
         ...current,
@@ -388,12 +360,6 @@ export function useGameState(): UseGameStateResult {
       }
 
       const offer = current.draft.currentOffer
-      trackEvent('draft_hit', {
-        era: current.era,
-        slot: current.draft.activeSlot,
-        offer_index: current.draft.offerIndex,
-        hits_this_slot: current.draft.hitsThisSlot,
-      })
       decisionsRef.current = [
         ...decisionsRef.current,
         {
@@ -487,7 +453,6 @@ export function useGameState(): UseGameStateResult {
     if (!state.era) {
       return
     }
-    trackEvent('next_hand', { era: state.era, difficulty: state.difficulty })
     void beginEraLoad(state.era, state.difficulty, { keepSession: true, skipToDraft: true })
   }, [beginEraLoad, state.difficulty, state.era])
 
@@ -495,7 +460,6 @@ export function useGameState(): UseGameStateResult {
     if (!state.era) {
       return
     }
-    trackEvent('run_it_back', { era: state.era, difficulty: state.difficulty })
     resetEraProgress(state.era)
     const progress = resetPersistentSession()
     setPersistentProgress(progress)
@@ -504,7 +468,6 @@ export function useGameState(): UseGameStateResult {
   }, [beginEraLoad, state.difficulty, state.era])
 
   const onPlayAgain = useCallback(() => {
-    trackEvent('go_home', { era: state.era ?? undefined })
     rngRef.current = null
     setPool(null)
     setPositionDecisions(createEmptyPositionDecisions())
@@ -520,13 +483,10 @@ export function useGameState(): UseGameStateResult {
   }, [state.era])
 
   const onToggleMute = useCallback(() => {
-    setState((current) => {
-      trackEvent('mute_toggle', { muted: !current.muted })
-      return {
-        ...current,
-        muted: !current.muted,
-      }
-    })
+    setState((current) => ({
+      ...current,
+      muted: !current.muted,
+    }))
   }, [])
 
   const onExportLogsJson = useCallback(() => exportGameLogsJson(loadGameLogs()), [])

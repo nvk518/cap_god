@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Dialog } from '@base-ui/react/dialog'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import styles from './RulesDialog.module.css'
 
 export interface RulesDialogProps {
@@ -10,7 +11,13 @@ export interface RulesDialogProps {
 
 export function RulesDialog({ triggerLabel, title, children }: RulesDialogProps) {
   return (
-    <Dialog.Root>
+    <Dialog.Root
+      onOpenChange={(open) => {
+        if (open) {
+          trackButtonClick(AnalyticsEvent.CLICK_RULES)
+        }
+      }}
+    >
       <Dialog.Trigger className={styles.trigger}>{triggerLabel}</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
@@ -21,7 +28,12 @@ export function RulesDialog({ triggerLabel, title, children }: RulesDialogProps)
               {children}
             </Dialog.Description>
             <div className={styles.footer}>
-              <Dialog.Close className={styles.close}>Close</Dialog.Close>
+              <Dialog.Close
+                className={styles.close}
+                onClick={() => trackButtonClick(AnalyticsEvent.CLICK_RULES_CLOSE)}
+              >
+                Close
+              </Dialog.Close>
             </div>
           </Dialog.Popup>
         </Dialog.Viewport>

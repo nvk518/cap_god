@@ -1,3 +1,8 @@
+import type { AnalyticsEventName } from './analyticsEvents'
+
+export { AnalyticsEvent } from './analyticsEvents'
+export type { AnalyticsEventName } from './analyticsEvents'
+
 type AnalyticsValue = string | number | boolean
 
 type AnalyticsParams = Record<string, AnalyticsValue | undefined>
@@ -31,4 +36,8 @@ function cleanParams(params?: AnalyticsParams): Record<string, AnalyticsValue> |
 
 export function trackEvent(eventName: string, params?: AnalyticsParams): void {
   gtag('event', eventName, cleanParams(params))
+}
+
+export function trackButtonClick(eventName: AnalyticsEventName, params?: AnalyticsParams): void {
+  trackEvent(eventName, params)
 }

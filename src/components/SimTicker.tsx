@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Player } from '../schemas/player'
 import { buildSimTimeline } from '../lib/simTimeline'
+import { AnalyticsEvent, trackButtonClick } from '../lib/analytics'
 import type { ChampionTeam, SimResult } from '../types/game'
 import { Button } from '../ui/Button'
 import styles from './SimTicker.module.css'
@@ -69,6 +70,12 @@ export function SimTicker({ result, champion, roster, onComplete }: SimTickerPro
   }, [activeIndex, atEnd, current?.kind, lastIndex, reducedMotion])
 
   const advance = () => {
+    trackButtonClick(AnalyticsEvent.CLICK_SIM_ADVANCE, {
+      champion_id: champion.id,
+      event_index: activeIndex,
+      at_end: atEnd,
+      label: nextLabel,
+    })
     if (atEnd) {
       if (!completedRef.current) {
         completedRef.current = true
@@ -80,6 +87,10 @@ export function SimTicker({ result, champion, roster, onComplete }: SimTickerPro
   }
 
   const skip = () => {
+    trackButtonClick(AnalyticsEvent.CLICK_SKIP_TO_RESULT, {
+      champion_id: champion.id,
+      event_index: activeIndex,
+    })
     completedRef.current = true
     onComplete()
   }
